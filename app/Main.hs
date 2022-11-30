@@ -113,6 +113,9 @@ parseTail :: Parser LispVal
 parseTail = eof <|> parseExpr
 
 parseList :: Parser LispVal
+parseList = do
+    head <- parseCommonSubsequence
+    tail <- parseTail
 
 
 {-
