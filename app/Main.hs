@@ -1,5 +1,7 @@
 module Main where
 
+-- Commit test
+
 import Text.ParserCombinators.Parsec hiding (spaces)
 import System.Environment
 import Control.Monad
@@ -14,7 +16,29 @@ data LispVal = Atom String
             |  Character Char
             |  Float Rational
 
--- Task: Parse literals accordng to R5RS standard
+instance Show LispVal where show = showVal
+
+-- Parsing section
+
+{-
+Excercise 2.3.5 (PENDING FOR TESTING)
+Add a Character constructor to LispVal, and create
+a parser for character literals as described in R5RS.
+-}
+
+symbol :: Parser Char
+symbol = oneOf "!#$%&|*+-/:<=>?@^_~"
+
+spaces :: Parser ()
+spaces = skipMany1 space
+
+parseLiteral :: Parser LispVal
+parseLiteral =
+    do
+        char '#'
+        char '\\'
+        literal <- (anyChar <|> parseSpaceLiteral <|> parseNewlineLiteral)
+        return $ Character literal
 
 parseSpaceLiteral :: Parser Char
 parseSpaceLiteral =
@@ -28,16 +52,28 @@ parseNewlineLiteral =
         string "newline"
         return '\n'
 
-parseLiteral :: Parser LispVal
-parseLiteral =
+
+{-
+Excercise 2.3.2 (PENDING FOR TESTS)
+Our strings aren't quite R5RS compliant, because they don't support
+escaping of internal quotes within the string. Change parseString
+so that \" gives a literal quote character instead of terminating
+the string. You may want to replace noneOf "\"" with a new parser 
+action that accepts either a non-quote character or a backslash
+followed by a quote mark.
+-}
+parseString :: Parser LispVal
+parseString =
     do
-        char '#'
-        char '\\'
-        literal <- (anyChar <|> parseSpaceLiteral <|> parseNewlineLiteral)
-        return $ Character literal
+        char '"'
+        x <- many $ parseEscape <|> anyChar
+        char '"'
+        return $ String x
 
--- Auxiliary function for parsing escape characters
-
+{-
+Excercise 2.3.3 (PENDING FOR TESTS)
+Modify the previous exercise to support \n, \r, \t, \\, and any other desired escape characters
+-}
 parseEscape :: Parser Char
 parseEscape =
     do
@@ -47,16 +83,8 @@ parseEscape =
                     'n' -> '\n'
                     'r' -> '\r'
                     't' -> '\t'
-                    '"' -> '"'
-                    '\\' -> '\\')
-
-parseString :: Parser LispVal
-parseString =
-    do
-        char '"'
-        x <- many $ parseEscape <|> anyChar
-        char '"'
-        return $ String x
+                    '"' -> escape
+                    '\\' -> escape)
 
 parseAtom :: Parser LispVal
 parseAtom = 
@@ -69,6 +97,22 @@ parseAtom =
             "#f" -> Bool False
             _    -> Atom atom
 
+{-
+Excercise 2.3.1 (DONE):
+Rewrite parseNumber, without liftM, using
+    1. do-notation
+    2. explicit sequencing with the >>= operator
+
+Excercise 2.3.4 (DONE):
+Change parseNumber to support the Scheme standard for different
+bases. You may find the readOct and readHex functions useful.
+-}
+
+parseNumber :: Parser LispVal
+parseNumber = parseQuantity 'd'
+          <|> do
+                char '#'
+                oneOf "bodx" >>= parseQuantity base
 
 parseQuantity :: Char -> Parser LispVal
 parseQuantity base =
@@ -81,63 +125,12 @@ parseQuantity base =
                                 'x' -> readHex
         return $ (Number . fst . head . transformer) digits
 
-parseNumber :: Parser LispVal
-parseNumber = parseQuantity 'd'
-          <|> do
-                char '#'
-                oneOf "bodx" >>= parseQuantity base
-
-{-
-    Excercise:
-    (1) Add support for the backquote syntactic sugar: the Scheme standard details
-        what it should expand into (quasiquote/unquote).
-
-    (2) Add support for vectors. The Haskell representation is up to you: GHC does
-        have an Array data type, but it can be difficult to use. Strictly speaking, a
-        vector should have constant-time indexing and updating, but destructive update
-        in a purely functional language is difficult. You may have a better idea how to do
-        this after the section on set!, later in this tutorial.
-
-    (3) Instead of using the try combinator, left-factor the grammar so that the
-        common subsequence is its own parser. You should end up with a parser that
-        matches a string of expressions, and one that matches either nothing or a dot
-        and a single expression. Combining the return values of these into either a List
-        or a DottedList is left as a (somewhat tricky) exercise for the reader: you may
-        want to break it out into another helper function.
--}
-
-parseCommonSubsequence :: Parser LispVal
-parseCommonSubsequence = liftM List $ sepBy parseExpr spaces
-
-parseTail :: Parser LispVal
-parseTail = eof <|> parseExpr
-
-parseList :: Parser LispVal
-parseList = do
-    head <- parseCommonSubsequence
-    tail <- parseTail
-
-
-{-
-parseList :: Parser LispVal
-parseList = liftM List $ sepBy parseExpr spaces
-
-parseDottedList :: Parser LispVal
-parseDottedList =
-    do
-        head <- endBy parseExpr spaces
-        tail <- char '.' >> spaces >> parseExpr
-        return $ DottedList head tail
--}
-
 parseQuoted :: Parser LispVal
 parseQuoted =
     do
         char '\''
         x <- parseExpr
         return $ List [Atom "quote", x]
-
--- Pending: implementation of binary to decimal converter
 
 parseExpr :: Parser LispVal
 parseExpr = parseAtom
@@ -150,16 +143,33 @@ parseExpr = parseAtom
                 char ')'
                 return x
 
-symbol :: Parser Char
-symbol = oneOf "!#$%&|*+-/:<=>?@^_~"
+-- Evaluation: part 1
+
+showVal :: LispVal -> String
+showVal (String contents) = "\"" ++ contents ++ "\""
+showVal (Aton name) = name
+showVal (Number contents) = show contents
+showVal (Bool True) = "#t"
+showVal (Bool False) = "#f"
+
+showVal (List contents) = "(" ++ unwordsList ++ ")"
+showVal (DottedList head tail) = "(" ++ unwordsList head ++ " . " ++ showVal tail ++ ")"
+
+unwordsList :: [LispVal] -> String
+unwordsList = unwords . map showVal
+
+eval :: LispVal -> LispVal
+eval val@(String _) = val
+eval val@(Number _) = val
+eval val@(Bool _) = val
+eval (List [Atom "quote", val]) = val
+
+-- Output
 
 readExpr :: String -> String
 readExpr input = case parse parseExpr "lisp" input of
     Left err -> "No match: " ++ show err
-    Right _ -> "Found value"
-
-spaces :: Parser ()
-spaces = skipMany1 space
+    Right val -> "Found value" ++ show val
 
 main :: IO ()
 main = do
