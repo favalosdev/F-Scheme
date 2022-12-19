@@ -66,7 +66,7 @@ parseString :: Parser LispVal
 parseString =
     do
         char '"'
-        x <- many $ parseEscape <|> anyChar
+        x <- many (parseEscape <|> anyChar)
         char '"'
         return $ String x
 
@@ -112,7 +112,7 @@ parseNumber :: Parser LispVal
 parseNumber = parseQuantity 'd'
           <|> do
                 char '#'
-                oneOf "bodx" >>= parseQuantity base
+                oneOf "bodx" >>= parseQuantity
 
 parseQuantity :: Char -> Parser LispVal
 parseQuantity base =
@@ -125,12 +125,54 @@ parseQuantity base =
                                 'x' -> readHex
         return $ (Number . fst . head . transformer) digits
 
+{-
+Excercise 2.4.1:
+Add support for the backquotesyntactic sugar: the
+Scheme standard details what it should expand into
+(quasiquote/unquote).
+-}
+
 parseQuoted :: Parser LispVal
 parseQuoted =
     do
         char '\''
         x <- parseExpr
         return $ List [Atom "quote", x]
+
+
+{-
+Excercise 2.4.3: (PENDING FOR TEST)
+Instead of using the try combinator, left-factor the grammar
+so that the common subsequence is its own parser. You should
+end up with a parser that matches a string of expressions, and
+one that matches either nothing or a dot and a single expression.
+Combining the return values of these into either a List or a
+DottedList is left as a (somewhat tricky) exercise for the
+reader: you may want to break it out into another helper function.
+-}
+
+-- Make this function as general as possible
+parseList :: Parser LispVal
+parseList = 
+    do
+        common <- parseCommon
+        rest <- parseNothing <|> parseDottedRest
+        return $ case rest of
+            List _ -> List common
+            _ -> DottedList common rest
+
+-- This is rather unconventional but I'm running out of ideas
+parseNothing :: Parser LispVal
+parseNothing =
+    do
+        string []
+        return $ List []
+
+parseCommon :: Parser [LispVal]
+parseCommon = sepBy parseExpr spaces
+
+parseDottedRest :: Parser LispVal
+parseDottedRest = spaces >> char '.' >> spaces >> parseExpr
 
 parseExpr :: Parser LispVal
 parseExpr = parseAtom
@@ -139,7 +181,7 @@ parseExpr = parseAtom
         <|> parseQuoted
         <|> do 
                 char '('
-                x <- try parseList <|> parseDottedList
+                x <- parseList
                 char ')'
                 return x
 
@@ -147,12 +189,12 @@ parseExpr = parseAtom
 
 showVal :: LispVal -> String
 showVal (String contents) = "\"" ++ contents ++ "\""
-showVal (Aton name) = name
+showVal (Atom name) = name
 showVal (Number contents) = show contents
 showVal (Bool True) = "#t"
 showVal (Bool False) = "#f"
 
-showVal (List contents) = "(" ++ unwordsList ++ ")"
+showVal (List contents) = "(" ++ unwordsList contents ++ ")"
 showVal (DottedList head tail) = "(" ++ unwordsList head ++ " . " ++ showVal tail ++ ")"
 
 unwordsList :: [LispVal] -> String
