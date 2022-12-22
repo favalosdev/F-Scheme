@@ -21,7 +21,7 @@ instance Show LispVal where show = showVal
 -- Parsing section
 
 {-
-Excercise 2.3.5 (PENDING FOR TESTING)
+Excercise 2.3.5 (DONE)
 Add a Character constructor to LispVal, and create
 a parser for character literals as described in R5RS.
 -}
@@ -35,23 +35,13 @@ spaces = skipMany1 space
 parseLiteral :: Parser LispVal
 parseLiteral =
     do
-        char '#'
-        char '\\'
-        literal <- (anyChar <|> parseSpaceLiteral <|> parseNewlineLiteral)
+        string "#\\"
+        literal <- (string "space" >> return ' ')
+               <|> (string "newline" >> return '\n')
+               <|> letter
+               <|> digit
+               <|> symbol
         return $ Character literal
-
-parseSpaceLiteral :: Parser Char
-parseSpaceLiteral =
-    do
-        string "space"
-        return ' '
-
-parseNewlineLiteral :: Parser Char
-parseNewlineLiteral =
-    do
-        string "newline"
-        return '\n'
-
 
 {-
 Excercise 2.3.2 (PENDING FOR TESTS)
@@ -153,35 +143,36 @@ reader: you may want to break it out into another helper function.
 
 -- Make this function as general as possible
 parseList :: Parser LispVal
-parseList = 
-    do
-        common <- parseCommon
-        rest <- parseNothing <|> parseDottedRest
-        return $ case rest of
-            List _ -> List common
-            _ -> DottedList common rest
+parseList = liftM List $ sepBy parseExpr spaces
 
 -- This is rather unconventional but I'm running out of ideas
-parseNothing :: Parser LispVal
-parseNothing =
-    do
-        string []
-        return $ List []
+parseDottedList :: Parser LispVal
+parseDottedList = do
+    head <- endBy parseExpr spaces
+    tail <- char '.' >> spaces >> parseExpr
+    return $ DottedList head tail
 
 parseCommon :: Parser [LispVal]
 parseCommon = sepBy parseExpr spaces
 
 parseDottedRest :: Parser LispVal
-parseDottedRest = spaces >> char '.' >> spaces >> parseExpr
+parseDottedRest =
+    do
+        many1 space
+        char '.'
+        many1 space
+        rest <- parseExpr
+        return rest
 
 parseExpr :: Parser LispVal
-parseExpr = parseAtom
+parseExpr = parseLiteral
+        <|> parseAtom
         <|> parseString
         <|> parseNumber
         <|> parseQuoted
         <|> do 
                 char '('
-                x <- parseList
+                x <- try parseList <|> parseDottedList
                 char ')'
                 return x
 
@@ -193,6 +184,7 @@ showVal (Atom name) = name
 showVal (Number contents) = show contents
 showVal (Bool True) = "#t"
 showVal (Bool False) = "#f"
+showVal (Character literal) = [literal]
 
 showVal (List contents) = "(" ++ unwordsList contents ++ ")"
 showVal (DottedList head tail) = "(" ++ unwordsList head ++ " . " ++ showVal tail ++ ")"
@@ -211,7 +203,7 @@ eval (List [Atom "quote", val]) = val
 readExpr :: String -> String
 readExpr input = case parse parseExpr "lisp" input of
     Left err -> "No match: " ++ show err
-    Right val -> "Found value" ++ show val
+    Right val -> "Found value " ++ show val
 
 main :: IO ()
 main = do
