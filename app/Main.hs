@@ -18,6 +18,8 @@ data LispVal = Atom String
 
 instance Show LispVal where show = showVal
 
+
+
 -- Parsing section
 
 {-
@@ -44,7 +46,7 @@ parseLiteral =
         return $ Character literal
 
 {-
-Excercise 2.3.2 (PENDING FOR TESTS)
+Excercise 2.3.2 (DONE)
 Our strings aren't quite R5RS compliant, because they don't support
 escaping of internal quotes within the string. Change parseString
 so that \" gives a literal quote character instead of terminating
@@ -52,16 +54,18 @@ the string. You may want to replace noneOf "\"" with a new parser
 action that accepts either a non-quote character or a backslash
 followed by a quote mark.
 -}
+
+-- How the fuck do we make this work on Windows
 parseString :: Parser LispVal
 parseString =
     do
         char '"'
-        x <- many (parseEscape <|> anyChar)
+        x <- many (parseEscape <|> noneOf "\"")
         char '"'
         return $ String x
 
 {-
-Excercise 2.3.3 (PENDING FOR TESTS)
+Excercise 2.3.3 (DONE)
 Modify the previous exercise to support \n, \r, \t, \\, and any other desired escape characters
 -}
 parseEscape :: Parser Char
@@ -166,8 +170,8 @@ parseDottedRest =
 
 parseExpr :: Parser LispVal
 parseExpr = parseLiteral
-        <|> parseAtom
         <|> parseString
+        <|> parseAtom
         <|> parseNumber
         <|> parseQuoted
         <|> do 
@@ -180,11 +184,11 @@ parseExpr = parseLiteral
 
 showVal :: LispVal -> String
 showVal (String contents) = "\"" ++ contents ++ "\""
-showVal (Atom name) = name
-showVal (Number contents) = show contents
+showVal (Atom name) = "Atom: " ++ name
+showVal (Number contents) = "Number: " ++ show contents
 showVal (Bool True) = "#t"
 showVal (Bool False) = "#f"
-showVal (Character literal) = [literal]
+showVal (Character literal) = "Literal: " ++ [literal]
 
 showVal (List contents) = "(" ++ unwordsList contents ++ ")"
 showVal (DottedList head tail) = "(" ++ unwordsList head ++ " . " ++ showVal tail ++ ")"
