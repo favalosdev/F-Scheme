@@ -87,9 +87,9 @@ parseAtom =
         rest <- many (letter <|> digit <|> symbol)
         let atom = first:rest
         return $ case atom of
-            "#t" -> Bool True
-            "#f" -> Bool False
-            _    -> Atom atom
+                        "#t" -> Bool True
+                        "#f" -> Bool False
+                        _    -> Atom atom
 
 {-
 Excercise 2.3.1 (DONE):
@@ -146,27 +146,36 @@ reader: you may want to break it out into another helper function.
 -}
 
 -- Make this function as general as possible
+ {-
 parseList :: Parser LispVal
 parseList = liftM List $ sepBy parseExpr spaces
+-}
 
 -- This is rather unconventional but I'm running out of ideas
+parseList :: Parser LispVal
+parseList =
+    do
+        head <- many parseExpr
+        tail <- many parseDottedTail
+        return $ case tail of
+                        [] -> List head
+                        _  -> DottedList head tail
+
+{-
 parseDottedList :: Parser LispVal
 parseDottedList = do
     head <- endBy parseExpr spaces
     tail <- char '.' >> spaces >> parseExpr
     return $ DottedList head tail
-
-parseCommon :: Parser [LispVal]
-parseCommon = sepBy parseExpr spaces
-
-parseDottedRest :: Parser LispVal
-parseDottedRest =
+-}
+parseDottedTail :: Parser LispVal
+parseDottedTail =
     do
-        many1 space
+        spaces
         char '.'
-        many1 space
-        rest <- parseExpr
-        return rest
+        spaces
+        tail <- parseExpr
+        return tail
 
 parseExpr :: Parser LispVal
 parseExpr = parseLiteral
@@ -176,7 +185,7 @@ parseExpr = parseLiteral
         <|> parseQuoted
         <|> do 
                 char '('
-                x <- try parseList <|> parseDottedList
+                x <- parseList
                 char ')'
                 return x
 
