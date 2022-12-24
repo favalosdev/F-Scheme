@@ -18,11 +18,7 @@ data LispVal = Atom String
 
 instance Show LispVal where show = showVal
 
-
-
 -- Parsing section
-
-
 
 symbol :: Parser Char
 symbol = oneOf "!#$%&|*+-/:<=>?@^_~"
