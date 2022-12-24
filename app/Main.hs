@@ -22,11 +22,7 @@ instance Show LispVal where show = showVal
 
 -- Parsing section
 
-{-
-Excercise 2.3.5 (DONE)
-Add a Character constructor to LispVal, and create
-a parser for character literals as described in R5RS.
--}
+
 
 symbol :: Parser Char
 symbol = oneOf "!#$%&|*+-/:<=>?@^_~"
@@ -34,6 +30,11 @@ symbol = oneOf "!#$%&|*+-/:<=>?@^_~"
 spaces :: Parser ()
 spaces = skipMany1 space
 
+{-
+Excercise 2.3.5 (DONE)
+Add a Character constructor to LispVal, and create
+a parser for character literals as described in R5RS.
+-}
 parseLiteral :: Parser LispVal
 parseLiteral =
     do
@@ -135,7 +136,7 @@ parseQuoted =
 
 
 {-
-Excercise 2.4.3: (PENDING FOR TEST)
+Excercise 2.4.3: (PENDING)
 Instead of using the try combinator, left-factor the grammar
 so that the common subsequence is its own parser. You should
 end up with a parser that matches a string of expressions, and
@@ -146,36 +147,16 @@ reader: you may want to break it out into another helper function.
 -}
 
 -- Make this function as general as possible
- {-
+
 parseList :: Parser LispVal
 parseList = liftM List $ sepBy parseExpr spaces
--}
 
--- This is rather unconventional but I'm running out of ideas
-parseList :: Parser LispVal
-parseList =
-    do
-        head <- many parseExpr
-        tail <- many parseDottedTail
-        return $ case tail of
-                        [] -> List head
-                        _  -> DottedList head tail
-
-{-
 parseDottedList :: Parser LispVal
-parseDottedList = do
-    head <- endBy parseExpr spaces
-    tail <- char '.' >> spaces >> parseExpr
-    return $ DottedList head tail
--}
-parseDottedTail :: Parser LispVal
-parseDottedTail =
+parseDottedList =
     do
-        spaces
-        char '.'
-        spaces
-        tail <- parseExpr
-        return tail
+        head <- endBy parseExpr spaces
+        tail <- char '.' >> spaces >> parseExpr
+        return $ DottedList head tail
 
 parseExpr :: Parser LispVal
 parseExpr = parseLiteral
@@ -185,7 +166,7 @@ parseExpr = parseLiteral
         <|> parseQuoted
         <|> do 
                 char '('
-                x <- parseList
+                x <- try parseList <|> parseDottedList
                 char ')'
                 return x
 
@@ -193,11 +174,11 @@ parseExpr = parseLiteral
 
 showVal :: LispVal -> String
 showVal (String contents) = "\"" ++ contents ++ "\""
-showVal (Atom name) = "Atom: " ++ name
-showVal (Number contents) = "Number: " ++ show contents
+showVal (Atom name) = name
+showVal (Number contents) = show contents
 showVal (Bool True) = "#t"
 showVal (Bool False) = "#f"
-showVal (Character literal) = "Literal: " ++ [literal]
+showVal (Character literal) = [literal]
 
 showVal (List contents) = "(" ++ unwordsList contents ++ ")"
 showVal (DottedList head tail) = "(" ++ unwordsList head ++ " . " ++ showVal tail ++ ")"
@@ -207,18 +188,61 @@ unwordsList = unwords . map showVal
 
 eval :: LispVal -> LispVal
 eval val@(String _) = val
+eval val@(Atom _) = val
 eval val@(Number _) = val
 eval val@(Bool _) = val
+eval val@(Character _) = val
 eval (List [Atom "quote", val]) = val
+eval (List (Atom func : args)) = apply func $ map eval args
+
+apply :: String -> [LispVal] -> LispVal
+apply func args = maybe (Bool False) ($ args) $ lookup func primitives
+
+-- Primitives
+
+primitives :: [(String, [LispVal] -> LispVal)]
+primitives = [("+", numericBinop (+)),
+              ("-", numericBinop (-)),
+              ("*", numericBinop (*)),
+              ("/", numericBinop div),
+              ("mod", numericBinop mod),
+              ("quotient", numericBinop quot),
+              ("remainder", numericBinop rem),
+              ("symbol?", isSymbol),
+              ("string?", isString),
+              ("number?", isNumber)]
+
+numericBinop :: (Integer -> Integer -> Integer) -> [LispVal] -> LispVal
+numericBinop op params = Number $ foldl1 op $ map unpackNum params
+
+isSymbol :: LispVal -> LispVal
+isSymbol (Bool _) = Bool True
+isSymbol _ = Bool False
+
+isString :: LispVal -> LispVal
+isString (String _) = Bool True
+isString _ = Bool False
+
+isNumber :: LispVal -> LispVal
+isNumber (Number _) = Bool True
+isNumber _ = Bool False
+
+{--
+Excercise 3.1.2 (DONE)
+Change unpackNum so that it always returns 0 if the value
+is not a number, even if it's a string or list that could
+be parsed as a number.
+-}
+unpackNum :: LispVal -> Integer
+unpackNum (Number n) = n
+unpackNum _ = 0
 
 -- Output
 
-readExpr :: String -> String
+readExpr :: String -> LispVal
 readExpr input = case parse parseExpr "lisp" input of
-    Left err -> "No match: " ++ show err
-    Right val -> "Found value " ++ show val
+    Left err -> String $ "No match: " ++ show err
+    Right val -> val
 
 main :: IO ()
-main = do
-    (expr:_) <- getArgs
-    putStrLn (readExpr expr)
+main = getArgs >>= print . eval . readExpr . head
