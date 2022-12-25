@@ -5,6 +5,7 @@ module Main where
 import Text.ParserCombinators.Parsec hiding (spaces)
 import System.Environment
 import Control.Monad
+import Control.Monad.Except
 import Numeric
 
 data LispVal = Atom String
@@ -16,7 +17,23 @@ data LispVal = Atom String
             |  Character Char
             |  Float Rational
 
+data LispError = NumArgs Integer [LispVal]
+               | TypeMismatch String LispVal
+               | Parser ParseError
+               | BadSpecialForm String LispVal
+               | NotFunction String String
+               | UnboundVar String String
+               | Default String   
+
 instance Show LispVal where show = showVal
+instance Show LispError where show = showError
+
+type ThrowsError = Either LispError
+
+trapError action = catchError action (return . show)
+
+extractValue :: ThrowsError a -> a
+extractValue (Right val) = val
 
 -- Parsing section
 
@@ -117,7 +134,7 @@ parseQuantity base =
         return $ (Number . fst . head . transformer) digits
 
 {-
-Excercise 2.4.1:
+Excercise 2.4.1 (PENDING):
 Add support for the backquotesyntactic sugar: the
 Scheme standard details what it should expand into
 (quasiquote/unquote).
@@ -155,10 +172,9 @@ parseDottedList =
         return $ DottedList head tail
 
 parseExpr :: Parser LispVal
-parseExpr = parseLiteral
+parseExpr = (try parseNumber <|> parseLiteral)
         <|> parseString
         <|> parseAtom
-        <|> parseNumber
         <|> parseQuoted
         <|> do 
                 char '('
@@ -182,21 +198,22 @@ showVal (DottedList head tail) = "(" ++ unwordsList head ++ " . " ++ showVal tai
 unwordsList :: [LispVal] -> String
 unwordsList = unwords . map showVal
 
-eval :: LispVal -> LispVal
-eval val@(String _) = val
-eval val@(Atom _) = val
-eval val@(Number _) = val
-eval val@(Bool _) = val
-eval val@(Character _) = val
-eval (List [Atom "quote", val]) = val
-eval (List (Atom func : args)) = apply func $ map eval args
+eval :: LispVal -> ThrowsError LispVal
+eval val@(String _) = return val
+eval val@(Atom _) = return val
+eval val@(Number _) = return val
+eval val@(Bool _) = return val
+eval val@(Character _) = return val
+eval (List [Atom "quote", val]) = return val
+eval (List (Atom func : args)) = mapM eval args >>= apply func
+eval badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
 
-apply :: String -> [LispVal] -> LispVal
-apply func args = maybe (Bool False) ($ args) $ lookup func primitives
+apply :: String -> [LispVal] -> ThrowsError LispVal
+apply func args = maybe (throwError $ NotFunction "Unrecognized primitive function args" func) ($ args) (lookup func primitives)
 
 -- Primitives
 
-primitives :: [(String, [LispVal] -> LispVal)]
+primitives :: [(String, [LispVal] -> ThrowsError LispVal)]
 primitives = [("+", numericBinop (+)),
               ("-", numericBinop (-)),
               ("*", numericBinop (*)),
@@ -206,22 +223,15 @@ primitives = [("+", numericBinop (+)),
               ("remainder", numericBinop rem),
               ("symbol?", isSymbol),
               ("string?", isString),
-              ("number?", isNumber)]
+              ("number?", isNumber),
+              ("list?", isList),
+              ("char?", isChar),
+              ("boolean?", isBool),
+              ("symbol->string", symbolToString),
+              ("string->symbol", stringToSymbol)]
 
 numericBinop :: (Integer -> Integer -> Integer) -> [LispVal] -> LispVal
 numericBinop op params = Number $ foldl1 op $ map unpackNum params
-
-isSymbol :: LispVal -> LispVal
-isSymbol (Bool _) = Bool True
-isSymbol _ = Bool False
-
-isString :: LispVal -> LispVal
-isString (String _) = Bool True
-isString _ = Bool False
-
-isNumber :: LispVal -> LispVal
-isNumber (Number _) = Bool True
-isNumber _ = Bool False
 
 {--
 Excercise 3.1.2 (DONE)
@@ -233,12 +243,60 @@ unpackNum :: LispVal -> Integer
 unpackNum (Number n) = n
 unpackNum _ = 0
 
+{-
+Excercise 3.1.1 (ALMOST DONE, "list?" is not working FSM knows why)
+Add primitives to perform the various type-testing
+functions of R5RS: symbol?, string?, number?, etc.
+-}
+
+isSymbol, isString, isNumber, isList, isChar, isBool :: [LispVal] -> LispVal
+
+isSymbol ([Atom _]) = Bool True
+isSymbol _          = Bool False
+
+isString ([String _]) = Bool True
+isString _            = Bool False
+
+isNumber ([Number _]) = Bool True
+isNumber _            = Bool False
+
+isList ([DottedList _ _]) = Bool True
+isList ([List _])         = Bool True
+isList _                  = Bool False
+
+isChar ([Character _]) = Bool True
+isChar _               = Bool False
+
+isBool ([Bool _]) = Bool True
+isBool _          = Bool False
+
+{-
+Excercise 3.1.3 (DONE)
+Add the symbol-handling functions from R5RS. A symbol is what
+we've been calling an Atom in our data constructors
+-}
+
+symbolToString :: [LispVal] -> LispVal
+symbolToString ([Atom content])  = String content
+
+stringToSymbol :: [LispVal] -> LispVal
+stringToSymbol ([String content]) = Atom content
+
+-- Experiment
+
+{-
+isType :: (* -> LispVal) -> [LispVal] -> LispVal
+isType con arg = case arg of
+                    ([con _]) = Bool True
+                    _       = Bool False
+-}
+
 -- Output
 
-readExpr :: String -> LispVal
+readExpr :: String -> ThrowsError LispVal
 readExpr input = case parse parseExpr "lisp" input of
-    Left err -> String $ "No match: " ++ show err
-    Right val -> val
+    Left err -> throwError $ Parser err
+    Right val -> return val
 
 main :: IO ()
 main = getArgs >>= print . eval . readExpr . head
