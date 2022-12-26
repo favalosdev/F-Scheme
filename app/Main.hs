@@ -23,12 +23,12 @@ data LispError = NumArgs Integer [LispVal]
                | BadSpecialForm String LispVal
                | NotFunction String String
                | UnboundVar String String
-               | Default String   
+               | Default String
+
+type ThrowsError = Either LispError
 
 instance Show LispVal where show = showVal
 instance Show LispError where show = showError
-
-type ThrowsError = Either LispError
 
 trapError action = catchError action (return . show)
 
@@ -184,29 +184,36 @@ parseExpr = (try parseNumber <|> parseLiteral)
 
 -- Evaluation: part 1
 
-showVal :: LispVal -> String
-showVal (String contents) = "\"" ++ contents ++ "\""
-showVal (Atom name) = name
-showVal (Number contents) = show contents
-showVal (Bool True) = "#t"
-showVal (Bool False) = "#f"
-showVal (Character literal) = [literal]
+showError :: LispError -> String
+showError (UnboundVar message varname)  = message ++ ": " ++ varname
+showError (BadSpecialForm message form) = message ++ ": " ++ show form
+showError (NotFunction message func)    = message ++ ": " ++ show func
+showError (NumArgs expected found)      = "Expected " ++ show expected ++ " args; found values " ++ unwordsList found
+showError (TypeMismatch expected found) = "Invalid type: expected " ++ expected ++ ", found " ++ show found
+showError (Parser parseErr)             = "Parse error at " ++ show parseErr
 
-showVal (List contents) = "(" ++ unwordsList contents ++ ")"
+showVal :: LispVal -> String
+showVal (String contents)      = "\"" ++ contents ++ "\""
+showVal (Atom name)            = name
+showVal (Number contents)      = show contents
+showVal (Bool True)            = "#t"
+showVal (Bool False)           = "#f"
+showVal (Character literal)    = [literal]
+showVal (List contents)        = "(" ++ unwordsList contents ++ ")"
 showVal (DottedList head tail) = "(" ++ unwordsList head ++ " . " ++ showVal tail ++ ")"
 
 unwordsList :: [LispVal] -> String
 unwordsList = unwords . map showVal
 
 eval :: LispVal -> ThrowsError LispVal
-eval val@(String _) = return val
-eval val@(Atom _) = return val
-eval val@(Number _) = return val
-eval val@(Bool _) = return val
-eval val@(Character _) = return val
+eval val@(String _)             = return val
+eval val@(Atom _)               = return val
+eval val@(Number _)             = return val
+eval val@(Bool _)               = return val
+eval val@(Character _)          = return val
 eval (List [Atom "quote", val]) = return val
-eval (List (Atom func : args)) = mapM eval args >>= apply func
-eval badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
+eval (List (Atom func : args))  = mapM eval args >>= apply func
+eval badForm                    = throwError $ BadSpecialForm "Unrecognized special form" badForm
 
 apply :: String -> [LispVal] -> ThrowsError LispVal
 apply func args = maybe (throwError $ NotFunction "Unrecognized primitive function args" func) ($ args) (lookup func primitives)
@@ -230,8 +237,10 @@ primitives = [("+", numericBinop (+)),
               ("symbol->string", symbolToString),
               ("string->symbol", stringToSymbol)]
 
-numericBinop :: (Integer -> Integer -> Integer) -> [LispVal] -> LispVal
-numericBinop op params = Number $ foldl1 op $ map unpackNum params
+numericBinop :: (Integer -> Integer -> Integer) -> [LispVal] -> ThrowsError LispVal
+numericBinop op           []  = throwError $ NumArgs 2 []
+numericBinop op singleVal@[_] = throwError $ NumArgs 2 singleVal
+numericBinop op params        = mapM unpackNum params >>= return . Number . foldl1 op
 
 {--
 Excercise 3.1.2 (DONE)
@@ -239,9 +248,9 @@ Change unpackNum so that it always returns 0 if the value
 is not a number, even if it's a string or list that could
 be parsed as a number.
 -}
-unpackNum :: LispVal -> Integer
-unpackNum (Number n) = n
-unpackNum _ = 0
+unpackNum :: LispVal -> ThrowsError Integer
+unpackNum (Number n) = return n
+unpackNum notNum     = throwError $ TypeMismatch "number" notNum
 
 {-
 Excercise 3.1.1 (ALMOST DONE, "list?" is not working FSM knows why)
@@ -249,26 +258,26 @@ Add primitives to perform the various type-testing
 functions of R5RS: symbol?, string?, number?, etc.
 -}
 
-isSymbol, isString, isNumber, isList, isChar, isBool :: [LispVal] -> LispVal
+isSymbol, isString, isNumber, isList, isChar, isBool :: [LispVal] -> ThrowsError LispVal
 
-isSymbol ([Atom _]) = Bool True
-isSymbol _          = Bool False
+isSymbol ([Atom _]) = return $ Bool True
+isSymbol _          = return $ Bool False
 
-isString ([String _]) = Bool True
-isString _            = Bool False
+isString ([String _]) = return $ Bool True
+isString _            = return $ Bool False
 
-isNumber ([Number _]) = Bool True
-isNumber _            = Bool False
+isNumber ([Number _]) = return $ Bool True
+isNumber _            = return $ Bool False
 
-isList ([DottedList _ _]) = Bool True
-isList ([List _])         = Bool True
-isList _                  = Bool False
+isList ([DottedList _ _]) = return $ Bool True
+isList ([List _])         = return $ Bool True
+isList _                  = return $ Bool False
 
-isChar ([Character _]) = Bool True
-isChar _               = Bool False
+isChar ([Character _]) = return $ Bool True
+isChar _               = return $ Bool False
 
-isBool ([Bool _]) = Bool True
-isBool _          = Bool False
+isBool ([Bool _]) = return $ Bool True
+isBool _          = return $ Bool False
 
 {-
 Excercise 3.1.3 (DONE)
@@ -276,11 +285,9 @@ Add the symbol-handling functions from R5RS. A symbol is what
 we've been calling an Atom in our data constructors
 -}
 
-symbolToString :: [LispVal] -> LispVal
-symbolToString ([Atom content])  = String content
-
-stringToSymbol :: [LispVal] -> LispVal
-stringToSymbol ([String content]) = Atom content
+symbolToString, stringToSymbol :: [LispVal] -> ThrowsError LispVal
+symbolToString ([Atom content])  = return $ String content
+stringToSymbol ([String content]) = return $ Atom content
 
 -- Experiment
 
@@ -299,4 +306,7 @@ readExpr input = case parse parseExpr "lisp" input of
     Right val -> return val
 
 main :: IO ()
-main = getArgs >>= print . eval . readExpr . head
+main = do 
+    args <- getArgs
+    evaled <- return $ liftM show $ readExpr (args !! 0) >>= eval
+    putStrLn $ extractValue $ trapError evaled
