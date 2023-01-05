@@ -4,6 +4,7 @@ import LispVal
 import LispError
 import Control.Monad
 import Control.Monad.Except
+import Data.Char (isAlphaNum)
 
 -- Existential data type
 data Unpacker = forall a. Eq a => AnyUnpacker (LispVal -> ThrowsError a)
@@ -72,14 +73,15 @@ be parsed as a number.
 
 -- Pending authorization of unpacking numbers
 unpackNum :: LispVal -> ThrowsError Integer
-unpackNum (Number n) = return n
-unpackNum (String n) = if and $ map isAlphaNum n
-                       then return 0
-                       else unpackNum n 
+unpackNum (Number n)     = return n
+unpackNum val@(List [n]) = unpackNum val
+unpackNum val@(String n) = if and $ map isAlphaNum n
+                           then return 0
+                           else unpackNum val 
 
-unpackNum (Character n) = if isAlphaNum n
-                          then return $ 0
-                          else unpackNum n 
+unpackNum val@(Character n) = if isAlphaNum n
+                              then return $ 0
+                              else unpackNum val 
 
 unpackNum notNum     = throwError $ TypeMismatch "number" notNum
 

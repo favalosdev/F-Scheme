@@ -29,6 +29,14 @@ eval (List [Atom "if", pred@(Bool _), conseq, alt]) =
              Bool True  -> eval conseq
              Bool False -> eval alt
 
-eval (List [Atom "cond", ]) = 
+eval (List (Atom "cond" : clause : clauses)) = evalCond clause clauses
+     where evalCond (List [pred@(Bool _), Atom "=>", action]) cs     = evalCond (List [pred, action]) cs
+           evalCond (List [pred@(Bool _), action])            []     = eval action
+           evalCond (List [Atom "else", action])              []     = eval action
+           evalCond (List [pred@(Bool _), action])            (c:cs) = do result <- eval pred
+                                                                          case result of Bool True -> eval action
+                                                                                         Bool False -> evalCond c cs
+           evalCond badForm                                   _      = eval badForm
+
 eval (List (Atom func : args))             = mapM eval args >>= apply func
 eval badForm                               = throwError $ BadSpecialForm "Unrecognized special form" badForm
