@@ -1,9 +1,10 @@
+{-# LANGUAGE InstanceSigs #-}
 module LispError where
 
-import Control.Monad.Except
-import Text.ParserCombinators.Parsec
+import Control.Monad.Except ( MonadError(catchError) )
+import Text.ParserCombinators.Parsec ( ParseError )
 
-import LispVal
+import LispVal ( LispVal, unwordsList )
 
 data LispError = NumArgs Integer [LispVal]
                | TypeMismatch String LispVal
@@ -21,8 +22,12 @@ showError (NumArgs expected found)      = "Expected " ++ show expected ++ " args
 showError (TypeMismatch expected found) = "Invalid type: expected " ++ expected ++ ", found " ++ show found
 showError (Parser parseErr)             = "Parse error at " ++ show parseErr
 
-instance Show LispError where show = showError
+instance Show LispError where show :: LispError -> String
+                              show = showError
 
+type ThrowsError = Either LispError
+
+trapError :: (MonadError e m, Show e) => m String -> m String
 trapError action = catchError action (return . show)
 
 extractValue :: ThrowsError a -> a

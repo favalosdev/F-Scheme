@@ -5,6 +5,7 @@ import LispError
 import Control.Monad
 import Control.Monad.Except
 import Data.Char (isAlphaNum)
+import Utils
 
 
 apply :: String -> [LispVal] -> ThrowsError LispVal
@@ -49,7 +50,7 @@ primitives = [("+", numericBinop (+)),
 numericBinop :: (Integer -> Integer -> Integer) -> [LispVal] -> ThrowsError LispVal
 numericBinop op           []  = throwError $ NumArgs 2 []
 numericBinop op singleVal@[_] = throwError $ NumArgs 2 singleVal
-numericBinop op params        = mapM unpackNum params >>= return . Number . foldl1 op
+numericBinop op params        = mapM unpackNum params <&> (Number . foldl1 op)
 
 boolBinop :: (LispVal -> ThrowsError a) -> (a -> a -> Bool) -> [LispVal] -> ThrowsError LispVal
 boolBinop unpacker op args = if length args /= 2
@@ -72,7 +73,7 @@ functions of R5RS: symbol?, string?, number?, etc.
 isType :: Unpacker -> [LispVal] -> ThrowsError LispVal
 isType (AnyUnpacker unpacker) args = if length args /= 1
                                      then throwError $ NumArgs 1 args
-                                     else do return $ case (unpacker $ args !! 0) of 
+                                     else do return $ case (unpacker $ head args) of 
                                                                 Right _ -> Bool True
                                                                 Left  _ -> Bool False
 
@@ -91,8 +92,8 @@ we've been calling an Atom in our data constructors
 -}
 
 symbolToString, stringToSymbol :: [LispVal] -> ThrowsError LispVal
-symbolToString ([Atom content])   = return $ String content
-stringToSymbol ([String content]) = return $ Atom content
+symbolToString [Atom content]   = return $ String content
+stringToSymbol [String content] = return $ Atom content
 
 
 -- List primitives
@@ -118,13 +119,12 @@ cons [x1, x2]                 = return $ DottedList [x1] x2
 cons badArgList               = throwError $ NumArgs 2 badArgList
 
 eqv :: [LispVal] -> ThrowsError LispVal
-eqv [(Bool arg1), (Bool arg2)]             = return $ Bool $ arg1 == arg2
-eqv [(Number arg1), (Number arg2)]         = return $ Bool $ arg1 == arg2
-eqv [(String arg1), (String arg2)]         = return $ Bool $ arg1 == arg2
-eqv [(Atom arg1), (Atom arg2)]             = return $ Bool $ arg1 == arg2
-eqv [(DottedList xs x), (DottedList ys y)] = eqv [List $ xs ++ [x], List $ ys ++ [y]]
-eqv [(List arg1), (List arg2)]             = return $ Bool $ (length arg1 == length arg2) && 
-                                                             (all eqvPair $ zip arg1 arg2)
+eqv [Bool arg1, Bool arg2]             = return $ Bool $ arg1 == arg2
+eqv [Number arg1, Number arg2]         = return $ Bool $ arg1 == arg2
+eqv [String arg1, String arg2]         = return $ Bool $ arg1 == arg2
+eqv [Atom arg1, Atom arg2]             = return $ Bool $ arg1 == arg2
+eqv [DottedList xs x, DottedList ys y] = eqv [List $ xs ++ [x], List $ ys ++ [y]]
+eqv [List arg1, List arg2]             = return $ Bool $ (length arg1 == length arg2) && all eqvPair (zip arg1 arg2)
      where eqvPair (x1, x2) = case eqv [x1, x2] of
                                 Left err         -> False
                                 Right (Bool val) -> val
