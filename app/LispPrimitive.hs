@@ -1,18 +1,16 @@
-module LispPrimitives where
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Use head" #-}
+module LispPrimitive where
+
+import Control.Monad ( liftM )
+import Control.Monad.Except ( MonadError(throwError) )
+import Data.Functor ( (<&>) )
 
 import LispVal
-import LispError
-import Control.Monad
-import Control.Monad.Except
-import Data.Char (isAlphaNum)
-import Utils
-
-
-apply :: String -> [LispVal] -> ThrowsError LispVal
-apply func args = maybe (throwError $ NotFunction "Unrecognized primitive function args" func) ($ args) (lookup func primitives)
+import LispError ( ThrowsError, LispError(NumArgs, NotFunction, TypeMismatch) )
+import Unpacker
 
 -- Primitives
-
 primitives :: [(String, [LispVal] -> ThrowsError LispVal)]
 primitives = [("+", numericBinop (+)),
               ("-", numericBinop (-)),
@@ -54,15 +52,17 @@ numericBinop op params        = mapM unpackNum params <&> (Number . foldl1 op)
 
 boolBinop :: (LispVal -> ThrowsError a) -> (a -> a -> Bool) -> [LispVal] -> ThrowsError LispVal
 boolBinop unpacker op args = if length args /= 2
-                             then throwError $ NumArgs 2 args
-                             else do left   <- unpacker $ args !! 0
-                                     right  <- unpacker $ args !! 1
-                                     return $ Bool $ left `op` right
+                                then throwError $ NumArgs 2 args
+                                else do left   <- unpacker $ args !! 0
+                                        right  <- unpacker $ args !! 1
+                                        return $ Bool $ left `op` right
 
+numBoolBinop :: (Integer -> Integer -> Bool) -> [LispVal] -> ThrowsError LispVal
 numBoolBinop  = boolBinop unpackNum
+strBoolBinop :: (String -> String -> Bool) -> [LispVal] -> ThrowsError LispVal
 strBoolBinop  = boolBinop unpackStr
+boolBoolBinop :: (Bool -> Bool -> Bool) -> [LispVal] -> ThrowsError LispVal
 boolBoolBinop = boolBinop unpackBool
-
 
 {-
 Excercise 3.1.1 (IN CONSTRUCTION)
@@ -73,9 +73,9 @@ functions of R5RS: symbol?, string?, number?, etc.
 isType :: Unpacker -> [LispVal] -> ThrowsError LispVal
 isType (AnyUnpacker unpacker) args = if length args /= 1
                                      then throwError $ NumArgs 1 args
-                                     else do return $ case (unpacker $ head args) of 
-                                                                Right _ -> Bool True
-                                                                Left  _ -> Bool False
+                                     else do return $ case unpacker $ head args of 
+                                                           Right _ -> Bool True
+                                                           Left  _ -> Bool False
 
 isSymbol, isString, isNumber, isChar, isBool ::  [LispVal] -> ThrowsError LispVal
 isSymbol = isType (AnyUnpacker unpackAtom)
@@ -83,7 +83,6 @@ isString = isType (AnyUnpacker unpackStr)
 isNumber = isType (AnyUnpacker unpackNum)
 isBool   = isType (AnyUnpacker unpackBool) 
 isChar   = isType (AnyUnpacker unpackAtom) 
-
 
 {-
 Excercise 3.1.3 (DONE)
@@ -94,7 +93,6 @@ we've been calling an Atom in our data constructors
 symbolToString, stringToSymbol :: [LispVal] -> ThrowsError LispVal
 symbolToString [Atom content]   = return $ String content
 stringToSymbol [String content] = return $ Atom content
-
 
 -- List primitives
 
@@ -133,8 +131,8 @@ eqv badArgList                             = throwError $ NumArgs 2 badArgList
 
 equal :: [LispVal] -> ThrowsError LispVal
 equal [arg1, arg2] = do
-      primitiveEquals <- liftM or $ mapM (unpackEquals arg1 arg2) 
+      primitiveEquals <- or <$> mapM (unpackEquals arg1 arg2) 
                          [AnyUnpacker unpackNum, AnyUnpacker unpackStr, AnyUnpacker unpackBool]
       eqvEquals <- eqv [arg1, arg2]
-      return $ Bool $ (primitiveEquals || let (Bool x) = eqvEquals in x)
+      return $ Bool (primitiveEquals || let (Bool x) = eqvEquals in x)
 equal badArgList = throwError $ NumArgs 2 badArgList

@@ -1,7 +1,12 @@
-module Utils where
+module Unpacker where
 
-import LispError
+import Control.Monad.Except ( MonadError(catchError, throwError) )
+import Data.Char ( isAlphaNum )
+
+import LispError ( ThrowsError, LispError(TypeMismatch) )
 import LispVal
+
+data Unpacker = forall a. Eq a => AnyUnpacker (LispVal -> ThrowsError a)
 
 {--
 Excercise 3.1.2 (DONE)
@@ -12,17 +17,17 @@ be parsed as a number.
 
 -- Pending authorization of unpacking numbers
 unpackNum :: LispVal -> ThrowsError Integer
-unpackNum (Number n)     = return n
-unpackNum val@(List [n]) = unpackNum val
-unpackNum val@(String n) = if and $ map isAlphaNum n
-                           then return 0
-                           else unpackNum val 
-
-unpackNum val@(Character n) = if isAlphaNum n
-                              then return $ 0
+unpackNum (Number n)        = return n
+unpackNum val@(List [n])    = unpackNum val
+unpackNum val@(String n)    = if all isAlphaNum n
+                              then return 0
                               else unpackNum val 
 
-unpackNum notNum     = throwError $ TypeMismatch "number" notNum
+unpackNum val@(Character n) = if isAlphaNum n
+                              then return 0
+                              else unpackNum val 
+
+unpackNum notNum            = throwError $ TypeMismatch "number" notNum
 
 unpackStr :: LispVal -> ThrowsError String
 unpackStr (String s) = return s
@@ -47,4 +52,4 @@ unpackEquals arg1 arg2 (AnyUnpacker unpacker) =
              do unpacked1 <- unpacker arg1
                 unpacked2 <- unpacker arg2
                 return $ unpacked1 == unpacked2
-        `catchError` (const $ return False)
+        `catchError` const (return False)
