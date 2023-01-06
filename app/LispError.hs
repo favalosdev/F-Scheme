@@ -23,8 +23,6 @@ showError (Parser parseErr)             = "Parse error at " ++ show parseErr
 
 instance Show LispError where show = showError
 
-type ThrowsError = Either LispError
-
 trapError action = catchError action (return . show)
 
 extractValue :: ThrowsError a -> a

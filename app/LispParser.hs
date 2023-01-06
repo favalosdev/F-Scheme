@@ -101,8 +101,16 @@ parseNumber base =
 parseQuoted :: Parser LispVal
 parseQuoted =
     do
+        char '\''
         x <- parseExpr
         return $ List [Atom "quote", x]
+
+parseUnquoted :: Parser LispVal
+parseUnquoted =
+    do
+        char ','
+        x <- parseExpr
+        return $ List [Atom "unquote", x]
 
 {-
 Excercise 2.4.1 (DONE):
@@ -115,7 +123,7 @@ parseBackquoted :: Parser LispVal
 parseBackquoted =
     do
         string "`("
-        xs <- parseList (parseQuoted <|> (char ',' >> parseExpr))
+        xs <- parseList (parseUnquoted <|> parseExpr)
         char ')'
         return $ List [Atom "backquote", xs]
 
@@ -133,7 +141,7 @@ reader: you may want to break it out into another helper function.
 -- GOAL: Make this function as general as possible
 
 parseList :: Parser LispVal -> Parser LispVal
-parseList parseElem = liftM List $ sepBy parseElem spaces
+parseList parseElem = List <$> sepBy parseElem spaces
 
 parseDottedList :: Parser LispVal -> Parser LispVal
 parseDottedList parseElem =
@@ -147,11 +155,11 @@ parseExpr = parseString
         <|> parseAtom
         <|> parseNumber 'd'
         <|> (char '#' >> ((oneOf "bodx" >>= parseNumber) <|> parseLiteral))
-        <|> (char '\'' >> parseQuoted)
+        <|> parseQuoted
         <|> parseBackquoted
         <|> do
                 char '('
-                xs <- try (parseList parseExpr) <|> (parseDottedList parseExpr)
+                xs <- try parseList parseExpr <|> parseDottedList parseExpr
                 char ')'
                 return xs
 
