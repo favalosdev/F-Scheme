@@ -1,3 +1,3 @@
 # F-Lisp 
 
-Implementation of a Scheme dialect written in Haskell.
+Implementation of my own Scheme dialect written in Haskell.
