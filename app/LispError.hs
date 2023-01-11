@@ -4,7 +4,7 @@ module LispError where
 import Control.Monad.Except ( MonadError(catchError) )
 import Text.ParserCombinators.Parsec ( ParseError )
 
-import LispVal ( LispVal, unwordsList )
+import {-# SOURCE #-} LispVal
 
 data LispError = NumArgs Integer [LispVal]
                | TypeMismatch String LispVal

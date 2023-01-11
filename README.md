@@ -1,2 +1,3 @@
-# Scheme in Haskell
-Implementation of Scheme written in Haskell
+# F-Lisp 
+
+Implementation of a Scheme dialect written in Haskell.
