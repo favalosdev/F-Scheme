@@ -9,6 +9,3 @@ Based on the tutorial [Write Yourself a Scheme in 48 Hours](https://en.wikibooks
 ### Data types
 
 ### Features
-
-### Futture changes
-
