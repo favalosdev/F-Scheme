@@ -1,4 +1,4 @@
-# F-Lisp 
+# F-Scheme
 
 Implementation of my own Scheme dialect written in Haskell.
 
