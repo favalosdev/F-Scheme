@@ -1,11 +1,29 @@
 # F-Scheme
 
-Implementation of my own Scheme dialect written in Haskell.
+Implementation of a Scheme dialect written in Haskell.
 
 Based on the tutorial [Write Yourself a Scheme in 48 Hours](https://en.wikibooks.org/wiki/Write_Yourself_a_Scheme_in_48_Hours).
 
-## Status
+## Implementation status
+
+As of February 27th of 2023, the implementation status can be resumed as follows:
 
 ### Data types
+- [x] Atoms
+- [x] Booleans
+- [x] Of course, lists, dotted ones included
+- [x] Integers (decimal, octary, binary and hexadecimal)
+- [x] Strings
+- [x] Characters
+- [ ] Floats
+- [ ] Arrays
+- [ ] Vectors
 
-### Features
+### General features
+- [x] LISP primitives (car, cdr, cons, etc.)
+- [x] REPL
+- [x] Conditionals (cond)
+- [x] Backquoting
+- [ ] Macros
+- [ ] Standard library
+- [ ] Comprenhensive documentation
