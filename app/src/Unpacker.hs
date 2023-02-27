@@ -1,9 +1,8 @@
 module Unpacker where
 
-import Control.Monad.Except ( MonadError(catchError, throwError) )
-import Data.Char ( isAlphaNum )
-
-import LispError ( ThrowsError, LispError(TypeMismatch) )
+import Control.Monad.Except
+import Data.Char
+import LispError
 import LispVal
 
 data Unpacker = forall a. Eq a => AnyUnpacker (LispVal -> ThrowsError a)
@@ -15,7 +14,6 @@ is not a number, even if it's a string or list that could
 be parsed as a number.
 -}
 
--- Pending authorization of unpacking numbers
 unpackNum :: LispVal -> ThrowsError Integer
 unpackNum (Number n)        = return n
 unpackNum val@(List [n])    = unpackNum val

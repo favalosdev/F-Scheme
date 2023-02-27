@@ -1,30 +1,12 @@
 module LispParser where
 
 import Text.ParserCombinators.Parsec
-    ( char,
-      digit,
-      letter,
-      noneOf,
-      oneOf,
-      space,
-      string,
-      endBy,
-      many1,
-      sepBy,
-      skipMany1,
-      (<|>),
-      many,
-      parse,
-      Parser,
-      try )
-import Control.Monad ()
-import Control.Monad.Except ( MonadError(throwError) )
-import Numeric ( readBin, readDec, readHex, readOct )
+import Control.Monad
+import Control.Monad.Except
+import Numeric
 
 import LispVal
-    ( LispVal(DottedList, Character, String, Bool, Number, Atom,
-              List) )
-import LispError ( ThrowsError, LispError(Parser) )
+import LispError
 
 symbol :: Parser Char
 symbol = oneOf "!#$%&|*+-/:<=>?@^_~"

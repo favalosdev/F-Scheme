@@ -1,13 +1,11 @@
 module Env where
 
-import Data.IORef ( newIORef, readIORef, writeIORef, IORef )
+import Data.IORef
 import Control.Monad.Except
-    ( MonadError(throwError), runExceptT, MonadIO(liftIO), ExceptT )
-import Data.Maybe ( isJust )
+import Data.Maybe
 
 import {-# SOURCE #-} LispVal
 import LispError
-    ( LispError(UnboundVar), ThrowsError, trapError, extractValue )
 
 type Env = IORef [(String, IORef LispVal)]
 

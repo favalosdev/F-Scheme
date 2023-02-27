@@ -1,14 +1,14 @@
 module Repl where
 
-import Control.Monad ( liftM )
-import System.IO ( stdout, hFlush, stderr, hPutStrLn )
+import Control.Monad
+import System.IO
 
 import LispVal
-import LispParser ( readExpr )
-import Eval ( eval )
-import LispError ( trapError, extractValue)
-import Env ( Env, runIOThrows, liftThrows, nullEnv, bindVars )
-import LispPrimitive ( primitiveBindings )
+import LispParser
+import Eval
+import LispError
+import Env
+import LispPrimitive
 
 flushStr :: String -> IO ()
 flushStr str = putStr str >> hFlush stdout
@@ -36,4 +36,4 @@ runOne args = do
         >>= hPutStrLn stderr
 
 runRepl :: IO ()
-runRepl = primitiveBindings >>= until_ (== "quit") (readPrompt "F-Lisp>>> ") . evalAndPrint
+runRepl = primitiveBindings >>= until_ (== "quit") (readPrompt "F-Scheme>>> ") . evalAndPrint

@@ -1,12 +1,13 @@
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# HLINT ignore "Use head" #-}
+
 module LispPrimitive where
 
-import Control.Monad ( liftM )
-import Control.Monad.Except ( MonadError(throwError) )
+import Control.Monad
+import Control.Monad.Except
 
 import LispVal
-import LispError ( ThrowsError, LispError(NumArgs, NotFunction, TypeMismatch) )
+import LispError
 import Unpacker
 
 -- Primitives
