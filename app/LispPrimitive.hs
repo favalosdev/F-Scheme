@@ -8,22 +8,6 @@ import Control.Monad.Except ( MonadError(throwError) )
 import LispVal
 import LispError ( ThrowsError, LispError(NumArgs, NotFunction, TypeMismatch) )
 import Unpacker
-import Env
-
--- Helper functions
-makeFunc :: Maybe String -> Env -> [LispVal] -> [LispVal] -> IOThrowsError LispVal
-makeFunc varargs env params body = return $ Func (map showVal params) varargs body env
-
-makeNormalFunc :: Env -> [LispVal] -> [LispVal] -> IOThrowsError LispVal
-makeNormalFunc = makeFunc Nothing
-
-makeVarArgs :: LispVal -> Env -> [LispVal] -> [LispVal] -> IOThrowsError LispVal
-makeVarArgs = makeFunc . Just . showVal
-
-primitiveBindings :: IO Env
-primitiveBindings = nullEnv >>= flip bindVars ( map makePrimitiveFunc primitives)
-     where makePrimitiveFunc (var, func) = (var, PrimitiveFunc func)
-
 
 -- Primitives
 primitives :: [(String, [LispVal] -> ThrowsError LispVal)]
