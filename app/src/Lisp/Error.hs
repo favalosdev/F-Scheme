@@ -1,8 +1,8 @@
 {-# LANGUAGE InstanceSigs #-}
 
-module LispError where
+module Lisp.Error where
 
-import {-# SOURCE #-} LispVal
+import {-# SOURCE #-} Lisp.Val 
 
 import Control.Monad.Except
 import Text.ParserCombinators.Parsec
@@ -35,3 +35,12 @@ trapError action = catchError action (return . show)
 
 extractValue :: ThrowsError a -> a
 extractValue (Right val) = val
+
+type IOThrowsError = ExceptT LispError IO
+
+liftThrows :: ThrowsError a -> IOThrowsError a
+liftThrows (Left err) = throwError err
+liftThrows (Right val) = return val
+
+runIOThrows :: IOThrowsError String -> IO String
+runIOThrows action = extractValue <$> runExceptT (trapError action)

@@ -1,4 +1,4 @@
-module LispVal where
+module Lisp.Val where
 
 data LispVal
 

@@ -1,9 +1,10 @@
-module Unpacker where
+module Util.Unpacker where
 
 import Control.Monad.Except
 import Data.Char
-import LispError
-import LispVal
+
+import Lisp.Val
+import Lisp.Error
 
 data Unpacker = forall a. Eq a => AnyUnpacker (LispVal -> ThrowsError a)
 

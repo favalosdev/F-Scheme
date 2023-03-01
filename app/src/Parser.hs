@@ -1,12 +1,12 @@
-module LispParser where
+module Parser where
 
-import Text.ParserCombinators.Parsec
+import Text.ParserCombinators.Parsec hiding (spaces)
 import Control.Monad
 import Control.Monad.Except
 import Numeric
 
-import LispVal
-import LispError
+import Lisp.Val
+import Lisp.Error
 
 symbol :: Parser Char
 symbol = oneOf "!#$%&|*+-/:<=>?@^_~"
@@ -170,5 +170,6 @@ readOrThrow parser input = case parse parser "lisp" input of
 
 readExpr :: String -> ThrowsError LispVal
 readExpr = readOrThrow parseExpr
+
 readExprList :: String -> ThrowsError [LispVal]
 readExprList = readOrThrow (endBy parseExpr spaces) 

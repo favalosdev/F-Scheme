@@ -1,11 +1,12 @@
 {-# LANGUAGE InstanceSigs #-}
 
-module LispVal where
+module Lisp.Val where
 
-import Env
 import GHC.IO.Handle.Lock
-import LispError
 import System.IO
+
+import Lisp.Error
+import {-# SOURCE #-} Env
 
 data LispVal
   = Atom String

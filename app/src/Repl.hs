@@ -3,12 +3,11 @@ module Repl where
 import Control.Monad
 import System.IO
 
-import LispVal
-import LispParser
+import Lisp.Val
+import Parser
 import Eval
-import LispError
+import Lisp.Error
 import Env
-import LispPrimitive
 
 flushStr :: String -> IO ()
 flushStr str = putStr str >> hFlush stdout
@@ -17,7 +16,7 @@ readPrompt :: String -> IO String
 readPrompt prompt = flushStr prompt >> getLine
 
 evalString :: Env -> String -> IO String
-evalString env expr = runIOThrows $ show <$> (liftThrows $ readExpr expr) >>= eval env
+evalString env expr = runIOThrows (liftThrows (readExpr expr) >>= eval env . show)
 
 evalAndPrint :: Env -> String -> IO ()
 evalAndPrint env expr = evalString env expr >>= putStrLn
@@ -32,7 +31,7 @@ until_ pred prompt action = do
 runOne :: [String] -> IO ()
 runOne args = do
     env <- primitiveBindings >>= flip bindVars [("args", List $ map String $ drop 1 args)]
-    (runIOThrows $ liftM show $ eval env (List [Atom "load", String (head args)]))
+    runIOThrows (show <$> eval env (List [Atom "load", String (head args)]))
         >>= hPutStrLn stderr
 
 runRepl :: IO ()
