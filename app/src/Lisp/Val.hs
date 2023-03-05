@@ -20,7 +20,7 @@ data LispVal
   | PrimitiveFunc ([LispVal] -> ThrowsError LispVal)
   | Func
       { params :: [String],
-        vararg :: Maybe String,
+        varargs :: Maybe String,
         body :: [LispVal],
         closure :: Env
       }
@@ -40,7 +40,7 @@ showVal (PrimitiveFunc _)      = "<primitive>"
 showVal (Port _)               = "<IO port>"
 showVal (IOFunc _)             = "<IO primitive>"
 
-showVal (Func {params = args, vararg = varargs, body = body, closure = env}) =
+showVal (Func {params = args, varargs = varargs, body = body, closure = env}) =
   "(lambda ("
     ++ unwords (map show args)
     ++ ( case varargs of

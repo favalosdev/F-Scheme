@@ -67,13 +67,13 @@ eval env (List (Atom "lambda" : DottedList params varargs : body)) =
 eval env (List (Atom "lambda" : varargs@(Atom _) : body)) =
   makeVarArgs varargs env [] body
 
+eval env (List [Atom "load", String filename]) =
+  load filename >>= fmap list . mapM (eval env)
+
 eval env (List (function : args)) = do
   func <- eval env function
   argVals <- mapM (eval env) args
   apply func argVals
-
-eval env (List [Atom "load", String filename]) =
-  load filename >>= fmap last . mapM (eval env)
 
 eval _ badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
 
