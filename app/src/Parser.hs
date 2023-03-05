@@ -1,30 +1,14 @@
-module LispParser where
+module Parser where
 
-import Text.ParserCombinators.Parsec
-    ( char,
-      digit,
-      letter,
-      noneOf,
-      oneOf,
-      space,
-      string,
-      endBy,
-      many1,
-      sepBy,
-      skipMany1,
-      (<|>),
-      many,
-      parse,
-      Parser,
-      try )
-import Control.Monad ()
-import Control.Monad.Except ( MonadError(throwError) )
-import Numeric ( readBin, readDec, readHex, readOct )
+import Text.ParserCombinators.Parsec hiding (spaces)
+import Control.Monad
+import Control.Monad.Except
+import Numeric
 
-import LispVal
-    ( LispVal(DottedList, Character, String, Bool, Number, Atom,
-              List) )
-import LispError ( ThrowsError, LispError(Parser) )
+import Lisp.Val
+import Lisp.Error
+
+import Util.Flow
 
 symbol :: Parser Char
 symbol = oneOf "!#$%&|*+-/:<=>?@^_~"
@@ -188,5 +172,6 @@ readOrThrow parser input = case parse parser "lisp" input of
 
 readExpr :: String -> ThrowsError LispVal
 readExpr = readOrThrow parseExpr
+
 readExprList :: String -> ThrowsError [LispVal]
 readExprList = readOrThrow (endBy parseExpr spaces) 

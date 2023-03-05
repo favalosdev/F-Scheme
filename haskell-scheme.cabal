@@ -31,11 +31,11 @@ executable haskell-scheme
     main-is:          Main.hs
 
     -- Modules included in this executable, other than Main.
-    other-modules: Eval LispError LispParser LispVal LispPrimitive Repl Unpacker Env
+    other-modules: Lisp.Val Lisp.Error Lisp.Primitive Parser Env Eval Repl Util.Unpacker Util.Flow
 
     default-extensions: ExistentialQuantification
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
     build-depends: base ^>=4.16.4.0, parsec, mtl
-    hs-source-dirs:   app
+    hs-source-dirs:   app/src
     default-language: Haskell2010
