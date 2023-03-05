@@ -8,6 +8,8 @@ import Numeric
 import Lisp.Val
 import Lisp.Error
 
+import Util.Flow
+
 symbol :: Parser Char
 symbol = oneOf "!#$%&|*+-/:<=>?@^_~"
 

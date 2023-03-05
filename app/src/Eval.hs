@@ -6,9 +6,11 @@ import Data.Maybe
 
 import Lisp.Val
 import Lisp.Error
-import Lisp.Primitive.Func
-import Lisp.Primitive.IO
+import Lisp.Primitive
 
+import Util.Flow
+
+import Parser
 import Env
 
 eval :: Env -> LispVal -> IOThrowsError LispVal
@@ -71,22 +73,12 @@ eval env (List (function : args)) = do
   apply func argVals
 
 eval env (List [Atom "load", String filename]) =
-  load filename >>= (last . mapM <$> eval env)
+  load filename >>= fmap last . mapM (eval env)
 
 eval _ badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
 
-apply :: LispVal -> [LispVal] -> IOThrowsError LispVal
-apply (PrimitiveFunc func) args = liftThrows $ func args
-apply (Func params varargs body closure) args =
-  if num params /= num args && isNothing varargs
-    then throwError $ NumArgs (num params) args
-    else liftIO (bindVars closure $ zip params args) >>= bindVarArgs varargs >>= evalBody
-  where
-    remainingArgs = drop (length params) args
-    num = toInteger . length
-    evalBody env = last <$> mapM (eval env) body
-    bindVarArgs arg env = case arg of
-      Just argName -> liftIO $ bindVars env [(argName, List remainingArgs)]
-      Nothing -> return env
+evalString :: Env -> String -> IO String
+evalString env expr = runIOThrows $ liftM show $ (liftThrows $ readExpr expr) >>= eval env
 
-apply (IOFunc func) args = func args
+evalAndPrint :: Env -> String -> IO ()
+evalAndPrint env expr = evalString env expr >>= putStrLn

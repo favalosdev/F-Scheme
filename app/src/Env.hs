@@ -8,6 +8,8 @@ import Lisp.Val
 import Lisp.Error
 import Lisp.Primitive
 
+import Util.Flow
+
 type Env = IORef [(String, IORef LispVal)]
 
 nullEnv :: IO Env

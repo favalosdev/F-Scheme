@@ -3,14 +3,19 @@
 
 module Lisp.Primitive where
 
-import Control.Monad
+import Data.Maybe
+import System.IO
 import Control.Monad.Except
 
 import Lisp.Val
 import Lisp.Error
+
+import Util.Flow
 import Util.Unpacker 
 
-
+import Parser
+import {-# SOURCE #-} Eval
+import {-# SOURCE #-} Env
 
 numericBinop :: (Integer -> Integer -> Integer) -> [LispVal] -> ThrowsError LispVal
 numericBinop op           []  = throwError $ NumArgs 2 []
@@ -104,7 +109,20 @@ equal [arg1, arg2] = do
       return $ Bool (primitiveEquals || let (Bool x) = eqvEquals in x)
 equal badArgList = throwError $ NumArgs 2 badArgList
 
-
+apply :: LispVal -> [LispVal] -> IOThrowsError LispVal
+apply (PrimitiveFunc func) args = liftThrows $ func args
+apply (Func params varargs body closure) args =
+  if num params /= num args && isNothing varargs 
+    then throwError $ NumArgs (num params) args
+    else liftIO (bindVars closure $ zip params args) >>= bindVarArgs varargs >>= evalBody
+  where
+    remainingArgs = drop (length params) args
+    num = toInteger . length
+    evalBody env = last <$> mapM (eval env) body
+    bindVarArgs arg env = case arg of
+      Just argName -> liftIO $ bindVars env [(argName, List remainingArgs)]
+      Nothing -> return env
+apply (IOFunc func) args = func args
 
 applyProc :: [LispVal] -> IOThrowsError LispVal
 applyProc [func, List args] = apply func args

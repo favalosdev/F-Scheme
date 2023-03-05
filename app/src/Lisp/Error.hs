@@ -1,11 +1,10 @@
 {-# LANGUAGE InstanceSigs #-}
-
 module Lisp.Error where
-
-import {-# SOURCE #-} Lisp.Val 
 
 import Control.Monad.Except
 import Text.ParserCombinators.Parsec
+
+import {-# SOURCE #-} Lisp.Val
 
 data LispError
   = NumArgs Integer [LispVal]
@@ -27,20 +26,3 @@ showError (Parser parseErr)             = "Parse error at " ++ show parseErr
 instance Show LispError where
   show :: LispError -> String
   show = showError
-
-type ThrowsError = Either LispError
-
-trapError :: (MonadError e m, Show e) => m String -> m String
-trapError action = catchError action (return . show)
-
-extractValue :: ThrowsError a -> a
-extractValue (Right val) = val
-
-type IOThrowsError = ExceptT LispError IO
-
-liftThrows :: ThrowsError a -> IOThrowsError a
-liftThrows (Left err) = throwError err
-liftThrows (Right val) = return val
-
-runIOThrows :: IOThrowsError String -> IO String
-runIOThrows action = extractValue <$> runExceptT (trapError action)

@@ -5,8 +5,8 @@ module Lisp.Val where
 import GHC.IO.Handle.Lock
 import System.IO
 
-import Lisp.Error
 import {-# SOURCE #-} Env
+import Util.Flow
 
 data LispVal
   = Atom String

@@ -31,7 +31,7 @@ executable haskell-scheme
     main-is:          Main.hs
 
     -- Modules included in this executable, other than Main.
-    other-modules: Lisp.Val Lisp.Error Lisp.Primitive Lisp.Primitive Parser Env Eval Repl Util.Unpacker
+    other-modules: Lisp.Val Lisp.Error Lisp.Primitive Parser Env Eval Repl Util.Unpacker Util.Flow
 
     default-extensions: ExistentialQuantification
     -- LANGUAGE extensions used by modules in this package.
