@@ -2,10 +2,9 @@
 
 module Lisp.Val where
 
+import {-# SOURCE #-} Env
 import GHC.IO.Handle.Lock
 import System.IO
-
-import {-# SOURCE #-} Env
 import Util.Flow
 
 data LispVal
@@ -28,18 +27,17 @@ data LispVal
   | Port Handle
 
 showVal :: LispVal -> String
-showVal (String contents)      = "\"" ++ contents ++ "\""
-showVal (Atom name)            = name
-showVal (Number contents)      = show contents
-showVal (Bool True)            = "#t"
-showVal (Bool False)           = "#f"
-showVal (Character literal)    = [literal]
-showVal (List contents)        = "(" ++ unwordsList contents ++ ")"
+showVal (String contents) = "\"" ++ contents ++ "\""
+showVal (Atom name) = name
+showVal (Number contents) = show contents
+showVal (Bool True) = "#t"
+showVal (Bool False) = "#f"
+showVal (Character literal) = [literal]
+showVal (List contents) = "(" ++ unwordsList contents ++ ")"
 showVal (DottedList head tail) = "(" ++ unwordsList head ++ " . " ++ showVal tail ++ ")"
-showVal (PrimitiveFunc _)      = "<primitive>"
-showVal (Port _)               = "<IO port>"
-showVal (IOFunc _)             = "<IO primitive>"
-
+showVal (PrimitiveFunc _) = "<primitive>"
+showVal (Port _) = "<IO port>"
+showVal (IOFunc _) = "<IO primitive>"
 showVal (Func {params = args, varargs = varargs, body = body, closure = env}) =
   "(lambda ("
     ++ unwords (map show args)
