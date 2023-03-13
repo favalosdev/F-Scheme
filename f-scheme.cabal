@@ -1,5 +1,5 @@
 cabal-version:      2.4
-name:               haskell-scheme
+name:               f-scheme 
 version:            0.1.0.0
 
 -- A short (one-line) description of the package.
@@ -27,11 +27,20 @@ extra-source-files:
     CHANGELOG.md
     README.md
 
-executable haskell-scheme
+executable f-scheme 
     main-is:          Main.hs
 
     -- Modules included in this executable, other than Main.
-    other-modules: Lisp.Val Lisp.Error Lisp.Primitive Parser Env Eval Repl Util.Unpacker Util.Flow
+    other-modules:
+        Lisp.Val
+        Lisp.Error
+        Lisp.Primitive
+        Parser
+        Env
+        Eval
+        Repl
+        Util.Unpacker
+        Util.Flow
 
     default-extensions: ExistentialQuantification
     -- LANGUAGE extensions used by modules in this package.
@@ -39,3 +48,4 @@ executable haskell-scheme
     build-depends: base ^>=4.16.4.0, parsec, mtl
     hs-source-dirs:   app/src
     default-language: Haskell2010
+    ghc-options: -prof -fprof-auto -Wall

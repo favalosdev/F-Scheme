@@ -1,7 +1,6 @@
 module Parser where
 
 import Text.ParserCombinators.Parsec hiding (spaces)
-import Control.Monad
 import Control.Monad.Except
 import Numeric
 
@@ -24,7 +23,7 @@ a parser for character literals as described in R5RS.
 parseLiteral :: Parser LispVal
 parseLiteral =
     do
-        char '\\'
+        _ <- char '\\'
         literal <- (string "space" >> return ' ')
                <|> (string "newline" >> return '\n')
                <|> letter
@@ -46,9 +45,9 @@ followed by a quote mark.
 parseString :: Parser LispVal
 parseString =
     do
-        char '"'
+        _ <- char '"'
         x <- many (parseEscape <|> noneOf "\"")
-        char '"'
+        _ <- char '"'
         return $ String x
 
 {-
@@ -58,7 +57,7 @@ Modify the previous exercise to support \n, \r, \t, \\, and any other desired es
 parseEscape :: Parser Char
 parseEscape =
     do
-        char '\\'
+        _ <- char '\\'
         escape <- oneOf "nrt\"\\"
         return (case escape of
                     'n' -> '\n'
@@ -103,14 +102,14 @@ parseNumber base =
 parseQuoted :: Parser LispVal
 parseQuoted =
     do
-        char '\''
+        _ <- char '\''
         x <- parseExpr
         return $ List [Atom "quote", x]
 
 parseUnquoted :: Parser LispVal
 parseUnquoted =
     do
-        char ','
+        _ <- char ','
         x <- parseExpr
         return $ List [Atom "unquote", x]
 
@@ -124,9 +123,9 @@ Scheme standard details what it should expand into
 parseBackquoted :: Parser LispVal
 parseBackquoted =
     do
-        string "`("
+        _ <- string "`("
         xs <- parseList (parseUnquoted <|> parseExpr)
-        char ')'
+        _ <- char ')'
         return $ List [Atom "backquote", xs]
 
 {-
@@ -148,9 +147,9 @@ parseList parseElem = List <$> sepBy parseElem spaces
 parseDottedList :: Parser LispVal -> Parser LispVal
 parseDottedList parseElem =
     do
-        head <- endBy parseElem spaces
-        tail <- char '.' >> spaces >> parseExpr
-        return $ DottedList head tail
+        x <- endBy parseElem spaces
+        xs <- char '.' >> spaces >> parseExpr
+        return $ DottedList x xs 
 
 parseExpr :: Parser LispVal
 parseExpr = parseString
@@ -160,9 +159,9 @@ parseExpr = parseString
         <|> parseQuoted
         <|> parseBackquoted
         <|> do
-                char '('
+                _ <- char '('
                 xs <- try (parseList parseExpr) <|> parseDottedList parseExpr
-                char ')'
+                _ <- char ')'
                 return xs
 
 readOrThrow :: Parser a -> String -> ThrowsError a
