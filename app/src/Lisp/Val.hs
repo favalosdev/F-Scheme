@@ -1,11 +1,10 @@
 {-# LANGUAGE InstanceSigs #-}
 
-module LispVal where
+module Lisp.Val where
 
-import Env (Env, IOThrowsError)
-import GHC.IO.Handle.Lock (FileLockingNotSupported)
-import LispError (ThrowsError)
-import System.IO (Handle)
+import {-# SOURCE #-} Env
+import System.IO
+import Util.Flow
 
 data LispVal
   = Atom String
@@ -19,7 +18,7 @@ data LispVal
   | PrimitiveFunc ([LispVal] -> ThrowsError LispVal)
   | Func
       { params :: [String],
-        vararg :: Maybe String,
+        varargs :: Maybe String,
         body :: [LispVal],
         closure :: Env
       }
@@ -34,19 +33,19 @@ showVal (Bool True) = "#t"
 showVal (Bool False) = "#f"
 showVal (Character literal) = [literal]
 showVal (List contents) = "(" ++ unwordsList contents ++ ")"
-showVal (DottedList head tail) = "(" ++ unwordsList head ++ " . " ++ showVal tail ++ ")"
+showVal (DottedList x xs) = "(" ++ unwordsList x ++ " . " ++ showVal xs ++ ")"
 showVal (PrimitiveFunc _) = "<primitive>"
-showVal (Func {params = args, vararg = varargs, body = body, closure = env}) =
+showVal (Port _) = "<IO port>"
+showVal (IOFunc _) = "<IO primitive>"
+showVal (Func {params = args, varargs = vargs, body = _, closure = _}) =
   "(lambda ("
     ++ unwords (map show args)
-    ++ ( case varargs of
+    ++ ( case vargs of
            Nothing -> ""
            Just arg -> " . " ++ arg
        )
     ++ ") ...)"
-
-showVal (Port _) = "<IO port>"
-showVal (IOFunc _) = "<IO primitive>"
+showVal (Float x) = show x
 
 unwordsList :: [LispVal] -> String
 unwordsList = unwords . map showVal
