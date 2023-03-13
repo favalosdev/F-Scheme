@@ -62,15 +62,15 @@ defineVar envRef var value = do
       return value
 
 bindVars :: Env -> [(String, LispVal)] -> IO Env
-bindVars envRef bindings = readIORef envRef >>= extendEnv bindings >>= newIORef
+bindVars envRef pairs = readIORef envRef >>= extendEnv pairs >>= newIORef
   where
-    extendEnv bindings env = (++ env) <$> mapM addBinding bindings
+    extendEnv ps env = (++ env) <$> mapM addBinding ps 
     addBinding (var, value) = do
       ref <- newIORef value
       return (var, ref)
 
 makeFunc :: Maybe String -> Env -> [LispVal] -> [LispVal] -> IOThrowsError LispVal
-makeFunc varargs env params body = return $ Func (map showVal params) varargs body env
+makeFunc vargs env specs corpus = return $ Func (map showVal specs) vargs corpus env
 
 makeNormalFunc :: Env -> [LispVal] -> [LispVal] -> IOThrowsError LispVal
 makeNormalFunc = makeFunc Nothing
@@ -83,8 +83,8 @@ primitiveBindings =
   nullEnv
     >>= flip
       bindVars
-      ( map (makeFunc IOFunc) ioPrimitives
-          ++ map (makeFunc PrimitiveFunc) primitives
+      ( map (makeFuncAux IOFunc) ioPrimitives
+          ++ map (makeFuncAux PrimitiveFunc) primitives
       )
   where
-    makeFunc constructor (var, func) = (var, constructor func)
+    makeFuncAux constructor (var, func) = (var, constructor func)

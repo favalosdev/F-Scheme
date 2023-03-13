@@ -17,7 +17,7 @@ be parsed as a number.
 
 unpackNum :: LispVal -> ThrowsError Integer
 unpackNum (Number n) = return n
-unpackNum val@(List [n]) = unpackNum val
+unpackNum val@(List [_]) = unpackNum val
 unpackNum val@(String n) =
   if all isAlphaNum n
     then return 0

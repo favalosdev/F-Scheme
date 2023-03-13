@@ -1,11 +1,8 @@
 module Repl where
 
-import Control.Monad
 import Env
 import Eval
-import Lisp.Error
 import Lisp.Val
-import Parser
 import System.IO
 import Util.Flow
 
@@ -16,18 +13,18 @@ readPrompt :: String -> IO String
 readPrompt prompt = flushStr prompt >> getLine
 
 until_ :: Monad m => (a -> Bool) -> m a -> (a -> m ()) -> m ()
-until_ pred prompt action = do
+until_ prop prompt action = do
   result <- prompt
-  if pred result
+  if prop result 
     then return ()
-    else action result >> until_ pred prompt action
+    else action result >> until_ prop prompt action
 
 runOne :: [String] -> IO ()
 runOne args = do
-  let filename = head args
-  let largs = drop 1 args
-  env <- primitiveBindings >>= flip bindVars [("args", List $ map String largs)]
-  runIOThrows (show <$> eval env (List [Atom "load", String filename]))
+  let filename = String $ head args
+  let largs = List $ map String $ drop 1 args
+  env <- primitiveBindings >>= flip bindVars [("args", largs)]
+  runIOThrows (show <$> eval env (List [Atom "load", filename]))
     >>= hPutStrLn stderr
 
 runRepl :: IO ()

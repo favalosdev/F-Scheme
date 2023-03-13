@@ -48,4 +48,4 @@ executable f-scheme
     build-depends: base ^>=4.16.4.0, parsec, mtl
     hs-source-dirs:   app/src
     default-language: Haskell2010
-    ghc-options: -prof -fprof-auto
+    ghc-options: -prof -fprof-auto -Wall

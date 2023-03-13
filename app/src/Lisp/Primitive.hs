@@ -16,9 +16,9 @@ import Util.Flow
 import Util.Unpacker
 
 numericBinop :: (Integer -> Integer -> Integer) -> [LispVal] -> ThrowsError LispVal
-numericBinop op [] = throwError $ NumArgs 2 []
-numericBinop op singleVal@[_] = throwError $ NumArgs 2 singleVal
-numericBinop op params = Number . foldl1 op <$> mapM unpackNum params
+numericBinop _ [] = throwError $ NumArgs 2 []
+numericBinop _ singleVal@[_] = throwError $ NumArgs 2 singleVal
+numericBinop op specs = Number . foldl1 op <$> mapM unpackNum specs
 
 boolBinop :: (LispVal -> ThrowsError a) -> (a -> a -> Bool) -> [LispVal] -> ThrowsError LispVal
 boolBinop unpacker op args =
@@ -68,18 +68,21 @@ we've been calling an Atom in our data constructors
 
 symbolToString, stringToSymbol :: [LispVal] -> ThrowsError LispVal
 symbolToString [Atom content] = return $ String content
+symbolToString _ = throwError $ Default "Only atoms permitted" 
+
 stringToSymbol [String content] = return $ Atom content
+stringToSymbol _ = throwError $ Default "Only strings permitted"
 
 -- List primitives
 
 car :: [LispVal] -> ThrowsError LispVal
-car [List (x : xs)] = return x
-car [DottedList (x : xs) _] = return x
+car [List (x : _)] = return x
+car [DottedList (x : _) _] = return x
 car [badArg] = throwError $ TypeMismatch "pair" badArg
 car badArgList = throwError $ NumArgs 1 badArgList
 
 cdr :: [LispVal] -> ThrowsError LispVal
-cdr [List (x : xs)] = return $ List xs
+cdr [List (_ : xs)] = return $ List xs
 cdr [DottedList [_] x] = return x
 cdr [DottedList (_ : xs) x] = return $ DottedList xs x
 cdr [badArg] = throwError $ TypeMismatch "pair" badArg
@@ -101,8 +104,9 @@ eqv [DottedList xs x, DottedList ys y] = eqv [List $ xs ++ [x], List $ ys ++ [y]
 eqv [List arg1, List arg2] = return $ Bool $ (length arg1 == length arg2) && all eqvPair (zip arg1 arg2)
   where
     eqvPair (x1, x2) = case eqv [x1, x2] of
-      Left err -> False
+      Left _ -> False
       Right (Bool val) -> val
+      Right _ -> False 
 eqv [_, _] = return $ Bool False
 eqv badArgList = throwError $ NumArgs 2 badArgList
 
@@ -119,25 +123,28 @@ equal badArgList = throwError $ NumArgs 2 badArgList
 
 apply :: LispVal -> [LispVal] -> IOThrowsError LispVal
 apply (PrimitiveFunc func) args = liftThrows $ func args
-apply (Func params varargs body closure) args =
-  if num params /= num args && isNothing varargs
-    then throwError $ NumArgs (num params) args
-    else liftIO (bindVars closure $ zip params args) >>= bindVarArgs varargs >>= evalBody
+apply (Func specs vargs corpus env) args =
+  if num specs /= num args && isNothing vargs
+    then throwError $ NumArgs (num specs) args
+    else liftIO (bindVars env $ zip specs args) >>= bindVarArgs vargs >>= evalBody
   where
-    remainingArgs = drop (length params) args
+    remainingArgs = drop (length specs) args
     num = toInteger . length
-    evalBody env = last <$> mapM (eval env) body
-    bindVarArgs arg env = case arg of
-      Just argName -> liftIO $ bindVars env [(argName, List remainingArgs)]
-      Nothing -> return env
+    evalBody domain = last <$> mapM (eval domain) corpus 
+    bindVarArgs arg domain = case arg of
+      Just argName -> liftIO $ bindVars domain [(argName, List remainingArgs)]
+      Nothing -> return domain 
 apply (IOFunc func) args = func args
+apply _ _ = throwError $ Default "No function passed"
 
 applyProc :: [LispVal] -> IOThrowsError LispVal
 applyProc [func, List args] = apply func args
 applyProc (func : args) = apply func args
+applyProc _ = throwError $ Default "Expected procedure" 
 
 makePort :: IOMode -> [LispVal] -> IOThrowsError LispVal
 makePort mode [String filename] = fmap Port $ liftIO $ openFile filename mode
+makePort _ badForm = throwError $ TypeMismatch "Expected string describing filename" $ List badForm 
 
 closePort :: [LispVal] -> IOThrowsError LispVal
 closePort [Port port] = liftIO $ hClose port >> return (Bool True)
@@ -146,19 +153,23 @@ closePort _ = return $ Bool False
 readProc :: [LispVal] -> IOThrowsError LispVal
 readProc [] = readProc [Port stdin]
 readProc [Port port] = liftIO (hGetLine port) >>= liftThrows . readExpr
+readProc badForm = throwError $ TypeMismatch "Expected port" $ List badForm
 
 writeProc :: [LispVal] -> IOThrowsError LispVal
 writeProc [obj] = writeProc [obj, Port stdout]
 writeProc [obj, Port port] = liftIO $ hPrint port obj >> return (Bool True)
+writeProc badForm = throwError $ TypeMismatch "Expected object and port" $ List badForm
 
 readContents :: [LispVal] -> IOThrowsError LispVal
 readContents [String filename] = fmap String $ liftIO $ readFile filename
+readContents badForm = throwError $ TypeMismatch "Expected string with filename" $ List badForm
 
 load :: String -> IOThrowsError [LispVal]
 load filename = liftIO (readFile filename) >>= liftThrows . readExprList
 
 readAll :: [LispVal] -> IOThrowsError LispVal
 readAll [String filename] = List <$> load filename
+readAll badForm = throwError $ TypeMismatch "Expected string with filename" $ List badForm
 
 -- Primitives
 primitives :: [(String, [LispVal] -> ThrowsError LispVal)]
