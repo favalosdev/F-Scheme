@@ -165,7 +165,7 @@ parseExpr = parseString
                 return xs
 
 readOrThrow :: Parser a -> String -> ThrowsError a
-readOrThrow parser input = case parse parser "lisp" input of
+readOrThrow parser input = case parse parser "Scheme" input of
     Left err -> throwError $ Parser err
     Right val -> return val
 

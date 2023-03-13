@@ -3,7 +3,6 @@
 module Lisp.Val where
 
 import {-# SOURCE #-} Env
-import GHC.IO.Handle.Lock
 import System.IO
 import Util.Flow
 
@@ -34,18 +33,19 @@ showVal (Bool True) = "#t"
 showVal (Bool False) = "#f"
 showVal (Character literal) = [literal]
 showVal (List contents) = "(" ++ unwordsList contents ++ ")"
-showVal (DottedList head tail) = "(" ++ unwordsList head ++ " . " ++ showVal tail ++ ")"
+showVal (DottedList x xs) = "(" ++ unwordsList x ++ " . " ++ showVal xs ++ ")"
 showVal (PrimitiveFunc _) = "<primitive>"
 showVal (Port _) = "<IO port>"
 showVal (IOFunc _) = "<IO primitive>"
-showVal (Func {params = args, varargs = varargs, body = body, closure = env}) =
+showVal (Func {params = args, varargs = vargs, body = _, closure = _}) =
   "(lambda ("
     ++ unwords (map show args)
-    ++ ( case varargs of
+    ++ ( case vargs of
            Nothing -> ""
            Just arg -> " . " ++ arg
        )
     ++ ") ...)"
+showVal (Float x) = show x
 
 unwordsList :: [LispVal] -> String
 unwordsList = unwords . map showVal
