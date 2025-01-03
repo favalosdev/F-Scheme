@@ -32,13 +32,13 @@ executable f-scheme
 
     -- Modules included in this executable, other than Main.
     other-modules:
-        Lisp.Val
-        Lisp.Error
-        Lisp.Primitive
-        Parser
-        Env
-        Eval
-        Repl
+        FScheme.Core.Types
+        FScheme.Core.Error
+        FScheme.Core.Environment
+        FScheme.Core.Evaluator
+        FScheme.Parser.Parser
+        FScheme.Primitive.Functions
+        FScheme.REPL.Console
         Util.Unpacker
         Util.Flow
 

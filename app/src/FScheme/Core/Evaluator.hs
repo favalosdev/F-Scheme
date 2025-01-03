@@ -1,11 +1,11 @@
-module Eval where
+module FScheme.Core.Evaluator where
 
 import Control.Monad.Except
-import Env
-import Lisp.Error
-import Lisp.Primitive
-import Lisp.Val
-import Parser
+import FScheme.Core.Environment
+import FScheme.Core.Error
+import FScheme.Primitive.Functions
+import FScheme.Core.Types
+import FScheme.Parser.Parser
 import Util.Flow
 
 eval :: Env -> LispVal -> IOThrowsError LispVal

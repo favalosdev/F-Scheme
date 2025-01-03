@@ -1,7 +1,7 @@
 module Main where
 
 import System.Environment
-import Repl
+import FScheme.REPL.Console
 
 main :: IO ()
 main = do args <- getArgs

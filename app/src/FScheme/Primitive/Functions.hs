@@ -2,15 +2,15 @@
 
 {-# HLINT ignore "Use head" #-}
 
-module Lisp.Primitive where
+module FScheme.Primitive.Functions where
 
 import Control.Monad.Except
 import Data.Maybe
-import {-# SOURCE #-} Env
-import {-# SOURCE #-} Eval
-import Lisp.Error
-import Lisp.Val
-import Parser
+import {-# SOURCE #-} FScheme.Core.Environment
+import {-# SOURCE #-} FScheme.Core.Evaluator
+import FScheme.Core.Error
+import FScheme.Core.Types
+import FScheme.Parser.Parser
 import System.IO
 import Util.Flow
 import Util.Unpacker

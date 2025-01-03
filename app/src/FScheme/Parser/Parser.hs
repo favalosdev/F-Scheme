@@ -1,11 +1,11 @@
-module Parser where
+module FScheme.Parser.Parser where
 
 import Text.ParserCombinators.Parsec hiding (spaces)
 import Control.Monad.Except
 import Numeric
 
-import Lisp.Val
-import Lisp.Error
+import FScheme.Core.Types
+import FScheme.Core.Error
 
 import Util.Flow
 

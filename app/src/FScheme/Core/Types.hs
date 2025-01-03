@@ -1,8 +1,8 @@
 {-# LANGUAGE InstanceSigs #-}
 
-module Lisp.Val where
+module FScheme.Core.Types where
 
-import {-# SOURCE #-} Env
+import {-# SOURCE #-} FScheme.Core.Environment
 import System.IO
 import Util.Flow
 

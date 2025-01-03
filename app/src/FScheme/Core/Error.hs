@@ -1,8 +1,8 @@
 {-# LANGUAGE InstanceSigs #-}
 
-module Lisp.Error where
+module FScheme.Core.Error where
 
-import {-# SOURCE #-} Lisp.Val
+import {-# SOURCE #-} FScheme.Core.Types
 import Text.ParserCombinators.Parsec
 
 data LispError

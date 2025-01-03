@@ -1,6 +1,6 @@
-module Env where
+module FScheme.Core.Environment where
 import Data.IORef
-import {-# SOURCE #-} Lisp.Val
+import {-# SOURCE #-} FScheme.Core.Types
 
 type Env = IORef [(String, IORef LispVal)]
 

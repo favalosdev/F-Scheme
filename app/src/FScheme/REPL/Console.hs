@@ -1,8 +1,8 @@
-module Repl where
+module FScheme.REPL.Console where
 
-import Env
-import Eval
-import Lisp.Val
+import FScheme.Core.Environment
+import FScheme.Core.Evaluator
+import FScheme.Core.Types
 import System.IO
 import Util.Flow
 

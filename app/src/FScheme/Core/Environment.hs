@@ -1,11 +1,11 @@
-module Env where
+module FScheme.Core.Environment where
 
 import Control.Monad.Except
 import Data.IORef
 import Data.Maybe
-import Lisp.Error
-import Lisp.Primitive
-import Lisp.Val
+import FScheme.Core.Error
+import FScheme.Primitive.Functions
+import FScheme.Core.Types
 import Util.Flow
 
 type Env = IORef [(String, IORef LispVal)]
