@@ -2,8 +2,8 @@ module Util.Unpacker where
 
 import Control.Monad.Except
 import Data.Char
-import Lisp.Error
-import Lisp.Val
+import FScheme.Core.Error
+import FScheme.Core.Types
 import Util.Flow
 
 data Unpacker = forall a. Eq a => AnyUnpacker (LispVal -> ThrowsError a)

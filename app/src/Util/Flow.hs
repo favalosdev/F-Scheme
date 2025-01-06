@@ -2,7 +2,7 @@
 module Util.Flow where
 
 import Control.Monad.Except
-import Lisp.Error
+import FScheme.Core.Error
 
 type ThrowsError = Either LispError
 
@@ -24,7 +24,7 @@ extractValue (Right val) = val
 
 type IOThrowsError = ExceptT LispError IO
 
--- Recontextualises erros in different types of monads.
+-- Recontextualizes errors in different types of monads.
 liftThrows :: ThrowsError a -> IOThrowsError a
 liftThrows (Left err) = throwError err
 liftThrows (Right val) = return val
