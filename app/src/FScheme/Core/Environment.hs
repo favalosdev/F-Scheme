@@ -12,7 +12,7 @@ type Env = IORef [(String, IORef LispVal)]
 
 {-
   Cheat-sheet:
-  1. liftIO takes an IO wrapped value and "recontextualices" it into
+  1. liftIO takes an IO wrapped value and "recontextualizes" it into
     another MonadIO.
   2. newIORef takes a value, constructs an IORef and wraps it in the
     IO monad.
