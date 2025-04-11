@@ -1,6 +1,7 @@
 import subprocess
 import os
 import logging
+import sys
 
 WORKING_DIRECTORY = '/home/lambdaronin/Documents/projects/F-Scheme'
 
@@ -44,5 +45,26 @@ def run_test(test_id):
         success_rate = (success_count / G) * 100
         logger.info(f"Test Results: {success_count}/{G} ({success_rate:.1f}%) tests passed")
 
+def main():
+    if len(sys.argv) != 2:
+        print("Usage: python test_suite.py <test_category>")
+        print("Available test categories:")
+        print("  - core")
+        print("  - parser")
+        print("  - primitive")
+        print("  - environment")
+        print("  - error")
+        sys.exit(1)
+    
+    test_category = sys.argv[1]
+    valid_categories = ['core', 'parser', 'primitive', 'environment', 'error']
+    
+    if test_category not in valid_categories:
+        print(f"Error: Invalid test category '{test_category}'")
+        print("Valid categories are:", ', '.join(valid_categories))
+        sys.exit(1)
+    
+    run_test(test_category)
+
 if __name__ == '__main__':
-    run_test(test_id='example')
+    main()
