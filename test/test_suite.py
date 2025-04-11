@@ -2,8 +2,11 @@ import subprocess
 import os
 import logging
 import sys
+from dotenv import load_dotenv
 
-WORKING_DIRECTORY = '/home/lambdaronin/Documents/projects/F-Scheme'
+load_dotenv()
+
+WORKING_DIRECTORY = os.getenv('WORKING_DIR')
 
 # Configure logging
 logging.basicConfig(
