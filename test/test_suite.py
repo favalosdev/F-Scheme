@@ -1,6 +1,5 @@
 import subprocess
 import os
-import logging
 import sys
 from dotenv import load_dotenv
 
@@ -8,19 +7,12 @@ load_dotenv()
 
 WORKING_DIRECTORY = os.getenv('WORKING_DIR')
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
-
 def run_test(test_id):
     test_directory = os.path.join('test', 'cases', test_id)
     test_file = os.path.join(test_directory, 'test.scm')
     
-    logger.info(f"Running test suite: {test_id}")
-    logger.debug(f"Test file: {test_file}")
+    print(f"\nRunning test suite: {test_id}")
+    print("=" * 40)
 
     output = subprocess.run(['cabal', 'run', 'f-scheme', test_file], cwd=WORKING_DIRECTORY, capture_output=True)
     s = output.stderr.decode('utf-8')
@@ -34,19 +26,29 @@ def run_test(test_id):
         A = len(answer)
 
         if G != A:
-            logger.error(f"Dimension mismatch: expected {A} answers, got {G}")
+            print(f"❌ Dimension mismatch: expected {A} answers, got {G}")
             return
 
         success_count = 0
         for i in range(G):
             if guess[i] == answer[i]:
-                logger.info(f"Test {i+1}: PASS")
+                print(f"✓ Test {i+1}: PASS")
                 success_count += 1
             else:
-                logger.error(f"Test {i+1}: FAIL (expected '{answer[i]}', got '{guess[i]}')")
+                print(f"✗ Test {i+1}: FAIL")
+                print(f"  Expected: '{answer[i]}'")
+                print(f"  Got:      '{guess[i]}'")
         
         success_rate = (success_count / G) * 100
-        logger.info(f"Test Results: {success_count}/{G} ({success_rate:.1f}%) tests passed")
+        print("\nSummary:")
+        print("=" * 40)
+        print(f"Tests passed: {success_count}/{G} ({success_rate:.1f}%)")
+        if success_count == G:
+            print("🎉 All tests passed!")
+        elif success_count == 0:
+            print("❌ All tests failed!")
+        else:
+            print("⚠️  Some tests failed")
 
 def main():
     if len(sys.argv) != 2:
@@ -57,10 +59,18 @@ def main():
         print("  - primitive")
         print("  - environment")
         print("  - error")
+        # print("  - example")
         sys.exit(1)
     
     test_category = sys.argv[1]
-    valid_categories = ['core', 'parser', 'primitive', 'environment', 'error']
+    valid_categories = [
+        'core',
+        'parser',
+        'primitive',
+        'environment',
+        'error',
+        # 'example'
+    ]
     
     if test_category not in valid_categories:
         print(f"Error: Invalid test category '{test_category}'")
