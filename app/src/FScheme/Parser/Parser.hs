@@ -139,9 +139,9 @@ parseDottedList parseElem =
 
 parseExpr :: Parser LispVal
 parseExpr = parseString
-        <|> parseAtom
         <|> parseNumber 'd'
         <|> (char '#' >> ((oneOf "bodx" >>= parseNumber) <|> parseLiteral))
+        <|> parseAtom
         <|> parseQuoted
         <|> parseBackquoted
         <|> do
