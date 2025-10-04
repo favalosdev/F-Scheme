@@ -1,12 +1,12 @@
 module FScheme.Core.Environment where
 
 import Control.Monad.Except
+import Control.Monad.IO.Class
 import Data.IORef
 import Data.Maybe
 import FScheme.Core.Error
-import FScheme.Primitive.Functions
 import FScheme.Core.Types
-import Control.Monad.IO.Class
+import FScheme.Primitive.Functions
 import Util.Flow
 
 type Env = IORef [(String, IORef LispVal)]
@@ -64,11 +64,11 @@ defineVar envRef var value = do
 
 bindVars :: Env -> [(String, LispVal)] -> IO Env
 bindVars envRef pairs = readIORef envRef >>= extendEnv pairs >>= newIORef
-  where
-    extendEnv ps env = (++ env) <$> mapM addBinding ps 
-    addBinding (var, value) = do
-      ref <- newIORef value
-      return (var, ref)
+ where
+  extendEnv ps env = (++ env) <$> mapM addBinding ps
+  addBinding (var, value) = do
+    ref <- newIORef value
+    return (var, ref)
 
 makeFunc :: Maybe String -> Env -> [LispVal] -> [LispVal] -> IOThrowsError LispVal
 makeFunc vargs env specs corpus = return $ Func (map showVal specs) vargs corpus env
@@ -87,5 +87,5 @@ primitiveBindings =
       ( map (makeFuncAux IOFunc) ioPrimitives
           ++ map (makeFuncAux PrimitiveFunc) primitives
       )
-  where
-    makeFuncAux constructor (var, func) = (var, constructor func)
+ where
+  makeFuncAux constructor (var, func) = (var, constructor func)

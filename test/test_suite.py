@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-WORKING_DIRECTORY = os.getenv('WORKING_DIR')
+WORKING_DIRECTORY = "./"
 
 def run_test(test_id):
     test_directory = os.path.join('test', 'cases', test_id)

@@ -27,11 +27,8 @@ extra-source-files:
     CHANGELOG.md
     README.md
 
-executable f-scheme
-    main-is:          Main.hs
-
-    -- Modules included in this executable, other than Main.
-    other-modules:
+library
+    exposed-modules:
         FScheme.Core.Types
         FScheme.Core.Error
         FScheme.Core.Environment
@@ -43,9 +40,26 @@ executable f-scheme
         Util.Flow
 
     default-extensions: ExistentialQuantification
-    -- LANGUAGE extensions used by modules in this package.
-    -- other-extensions:
     build-depends: base >=4.17.2.1, parsec, mtl, transformers
-    hs-source-dirs:   app/src
+    hs-source-dirs:   src
     default-language: Haskell2010
     ghc-options: -Wall
+
+executable f-scheme
+  main-is:          Main.hs
+  build-depends: base, f-scheme
+  hs-source-dirs: app
+  default-language: Haskell2010
+  ghc-options: -Wall
+
+test-suite f-scheme-test
+    type:                exitcode-stdio-1.0
+    main-is:             Spec.hs
+    hs-source-dirs:      test
+    build-depends:
+        base,
+        hspec,
+        f-scheme
+    build-tool-depends:  hspec-discover:hspec-discover
+    ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+    default-language:    Haskell2010
