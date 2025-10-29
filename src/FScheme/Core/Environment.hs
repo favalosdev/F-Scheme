@@ -1,7 +1,6 @@
 module FScheme.Core.Environment where
 
 import Control.Monad.Except
-import Control.Monad.IO.Class
 import Data.IORef
 import Data.Maybe
 import FScheme.Core.Error
@@ -11,25 +10,9 @@ import Util.Flow
 
 type Env = IORef [(String, IORef LispVal)]
 
-{-
-  Cheat-sheet:
-  1. liftIO takes an IO wrapped value and "recontextualizes" it into
-    another MonadIO.
-  2. newIORef takes a value, constructs an IORef and wraps it in the
-    IO monad.
-  3. readIORef takes a value passed to an IORef and wraps it in the IO
-    monad.
-  4. writeIORef takes an IORef, a value and presumably overwrites it.
-    An empty type IO monad is returned - I presume - because of convenience.
-
-  All the functions in here build from these first principles.
--}
-
--- Creates a "null" env i.e. an empty tuple list
 nullEnv :: IO Env
 nullEnv = newIORef []
 
--- Self-explanatory
 isBound :: Env -> String -> IO Bool
 isBound envRef var = isJust . lookup var <$> readIORef envRef
 
@@ -41,7 +24,6 @@ getVar envRef var = do
     (liftIO . readIORef)
     (lookup var env)
 
--- Self-explanatory
 setVar :: Env -> String -> LispVal -> IOThrowsError LispVal
 setVar envRef var value = do
   env <- liftIO $ readIORef envRef

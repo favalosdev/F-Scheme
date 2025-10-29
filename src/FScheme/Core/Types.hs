@@ -29,6 +29,7 @@ showVal :: LispVal -> String
 showVal (String contents) = "\"" ++ contents ++ "\""
 showVal (Atom name) = name
 showVal (Number contents) = show contents
+showVal (Float x) = show x
 showVal (Bool True) = "#t"
 showVal (Bool False) = "#f"
 showVal (Character literal) = [literal]
@@ -45,7 +46,6 @@ showVal (Func {params = args, varargs = vargs, body = _, closure = _}) =
            Just arg -> " . " ++ arg
        )
     ++ ") ...)"
-showVal (Float x) = show x
 
 unwordsList :: [LispVal] -> String
 unwordsList = unwords . map showVal
