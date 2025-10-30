@@ -15,11 +15,6 @@ symbol = oneOf "!#$%&|*+-/:<=>?@^_~"
 spaces :: Parser ()
 spaces = skipMany1 space
 
-{-
-Excercise 2.3.5 (DONE)
-Add a Character constructor to LispVal, and create
-a parser for character literals as described in R5RS.
--}
 parseLiteral :: Parser LispVal
 parseLiteral =
   do
@@ -32,16 +27,6 @@ parseLiteral =
         <|> symbol
     return $ Character literal
 
-{-
-Excercise 2.3.2 (DONE)
-Our strings aren't quite R5RS compliant, because they don't support
-escaping of internal quotes within the string. Change parseString
-so that \" gives a literal quote character instead of terminating
-the string. You may want to replace noneOf "\"" with a new parser
-action that accepts either a non-quote character or a backslash
-followed by a quote mark.
--}
-
 parseString :: Parser LispVal
 parseString =
   do
@@ -50,45 +35,32 @@ parseString =
     _ <- char '"'
     return $ String x
 
-{-
-Excercise 2.3.3 (DONE)
-Modify the previous exercise to support \n, \r, \t, \\, and any other desired escape characters
--}
 parseEscape :: Parser Char
 parseEscape =
   do
     _ <- char '\\'
     escape <- oneOf "nrt\"\\"
-    return
-      ( case escape of
+    return $ case escape of
           'n' -> '\n'
           'r' -> '\r'
           't' -> '\t'
           '"' -> escape
           '\\' -> escape
-      )
 
 parseAtom :: Parser LispVal
 parseAtom =
   do
     first <- letter <|> symbol
     rest <- many (letter <|> digit <|> symbol)
-    let atom = first : rest
-    return $ case atom of
-      "#t" -> Bool True
-      "#f" -> Bool False
-      _ -> Atom atom
+    return $ Atom (first : rest)
 
-{-
-Excercise 2.3.1 (DONE):
-Rewrite parseNumber, without liftM, using
-    1. do-notation (check out parseExpr)
-    2. explicit sequencing with the >>= operator
-
-Excercise 2.3.4 (DONE):
-Change parseNumber to support the Scheme standard for different
-bases. You may find the readOct and readHex functions useful.
--}
+parseBool :: Parser LispVal
+parseBool =
+  do
+    base <- oneOf "tf"
+    return $ case base of
+      't' -> Bool True
+      'f' -> Bool False
 
 parseNumber :: Char -> Parser LispVal
 parseNumber base =
@@ -100,6 +72,9 @@ parseNumber base =
           'd' -> readDec
           'x' -> readHex
     return $ (Number . fst . head . transformer) digits
+  
+parseNonDecNumber :: Parser LispVal
+parseNonDecNumber = oneOf "bodx" >>= parseNumber
 
 parseQuoted :: Parser LispVal
 parseQuoted =
@@ -114,13 +89,6 @@ parseUnquoted =
     _ <- char ','
     x <- parseExpr
     return $ List [Atom "unquote", x]
-
-{-
-Excercise 2.4.1 (DONE):
-Add support for the backquotesyntactic sugar: the
-Scheme standard details what it should expand into
-(quasiquote/unquote).
--}
 
 parseBackquoted :: Parser LispVal
 parseBackquoted =
@@ -142,10 +110,10 @@ parseDottedList parseElem =
 
 parseExpr :: Parser LispVal
 parseExpr =
-  parseAtom
-    <|> parseNumber 'd'
-    <|> (char '#' >> ((oneOf "bodx" >>= parseNumber) <|> parseLiteral))
-    <|> parseString 
+    parseNumber 'd'
+    <|> (char '#' >> (parseNonDecNumber <|> parseBool <|> parseLiteral))
+    <|> parseAtom
+    <|> parseString
     <|> parseQuoted
     <|> parseBackquoted
     <|> do

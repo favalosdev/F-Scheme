@@ -19,12 +19,6 @@ eval env (List [Atom "backquote", List vals]) = List <$> mapM (evalBackquote env
   where
     evalBackquote domain (List [Atom "unquote", val]) = eval domain val
     evalBackquote domain val = eval domain $ List [Atom "quote", val]
-
-{- (DONE)
-Instead of treating any non-false value as true, change the definition
-of if so that the predicate accepts only Bool values and throws an error
-on any others.
--}
 eval env (List [Atom "if", prop, conseq, alt]) =
   do
     result <- eval env prop
@@ -32,19 +26,6 @@ eval env (List [Atom "if", prop, conseq, alt]) =
       Bool True -> eval env conseq
       Bool False -> eval env alt
       badForm -> throwError $ BadSpecialForm "Unrecognized special form" badForm
-
-{-
-    evalCond env (List [pred@(Bool _), action]) = eval env action
-    evalCond env (List [Atom "else", action]) = eval env action
-    evalCond env (List [pred, Atom "=>", action] : cs) = evalCond env (List [pred, action] : cs)
-    evalCond env (List [pred, action] : cs) = do
-      result <- eval env pred
-      case result of
-        Bool True -> eval env action
-        Bool False -> evalCond env cs
-        badForm -> throwError $ BadSpecialForm "Unrecognized special form" badForm
-    evalCond env [badForm] = throwError $ BadSpecialForm "Unrecognized special form" badForm
--}
 eval env (List [Atom "set!", Atom var, form]) =
   eval env form >>= setVar env var
 eval env (List (Atom "define" : List (Atom var : specs) : corpus)) =
