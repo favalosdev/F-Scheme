@@ -51,12 +51,15 @@ spec = describe "core Tests" $ do
     result <- evalString env "(or #f #t)"
     result `shouldBe` "#t"
 
-  {-
   it "(not #f)" $ do
     env <- primitiveBindings
     result <- evalString env "(not #f)"
     result `shouldBe` "#t"
-  -}
+
+  it "(not #t)" $ do
+    env <- primitiveBindings
+    result <- evalString env "(not #t)"
+    result `shouldBe` "#f"
 
   it "(= 5 5)" $ do
     env <- primitiveBindings
