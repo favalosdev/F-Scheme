@@ -93,7 +93,7 @@ cons [x, DottedList xs xlast] = return $ DottedList (x : xs) xlast
 cons [x1, x2] = return $ DottedList [x1] x2
 cons badArgList = throwError $ NumArgs 2 badArgList
 
-eqv :: [LispVal] -> ThrowsError LispVal
+eqv :: [LispVal] -> ThrowsError LispVal 
 eqv [Bool arg1, Bool arg2] = return $ Bool $ arg1 == arg2
 eqv [Number arg1, Number arg2] = return $ Bool $ arg1 == arg2
 eqv [String arg1, String arg2] = return $ Bool $ arg1 == arg2
