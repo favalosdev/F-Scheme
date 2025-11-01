@@ -39,12 +39,6 @@ strBoolBinop = boolBinop unpackStr
 boolBoolBinop :: (Bool -> Bool -> Bool) -> [LispVal] -> ThrowsError LispVal
 boolBoolBinop = boolBinop unpackBool
 
-{-
-Excercise 3.1.1 (IN CONSTRUCTION)
-Add primitives to perform the various type-testing
-functions of R5RS: symbol?, string?, number?, etc.
--}
-
 isType :: Unpacker -> [LispVal] -> ThrowsError LispVal
 isType (AnyUnpacker unpacker) args =
   if length args /= 1
@@ -61,20 +55,12 @@ isNumber = isType (AnyUnpacker unpackNum)
 isBool = isType (AnyUnpacker unpackBool)
 isChar = isType (AnyUnpacker unpackAtom)
 
-{-
-Excercise 3.1.3 (DONE)
-Add the symbol-handling functions from R5RS. A symbol is what
-we've been calling an Atom in our data constructors
--}
-
 symbolToString, stringToSymbol :: [LispVal] -> ThrowsError LispVal
 symbolToString [Atom content] = return $ String content
 symbolToString _ = throwError $ Default "Only atoms permitted" 
 
 stringToSymbol [String content] = return $ Atom content
 stringToSymbol _ = throwError $ Default "Only strings permitted"
-
--- List primitives
 
 car :: [LispVal] -> ThrowsError LispVal
 car [List (x : _)] = return x
@@ -172,7 +158,6 @@ readAll :: [LispVal] -> IOThrowsError LispVal
 readAll [String filename] = List <$> load filename
 readAll badForm = throwError $ TypeMismatch "Expected string with filename" $ List badForm
 
--- Primitives
 primitives :: [(String, [LispVal] -> ThrowsError LispVal)]
 primitives =
   [ ("+", numericBinop (+)),
