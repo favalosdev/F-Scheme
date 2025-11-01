@@ -14,7 +14,6 @@ import FScheme.Parser.Parser
 import System.IO
 import Util.Flow
 import Util.Unpacker
-import Control.Monad.IO.Class
 
 numericBinop :: (Integer -> Integer -> Integer) -> [LispVal] -> ThrowsError LispVal
 numericBinop _ [] = throwError $ NumArgs 2 []
