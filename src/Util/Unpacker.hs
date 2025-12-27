@@ -8,13 +8,6 @@ import Util.Flow
 
 data Unpacker = forall a. Eq a => AnyUnpacker (LispVal -> ThrowsError a)
 
-{--
-Excercise 3.1.2 (DONE)
-Change unpackNum so that it always returns 0 if the value
-is not a number, even if it's a string or list that could
-be parsed as a number.
--}
-
 unpackNum :: LispVal -> ThrowsError Integer
 unpackNum (Number n) = return n
 unpackNum val@(List [_]) = unpackNum val

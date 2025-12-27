@@ -22,6 +22,11 @@ data LispVal
         body :: [LispVal],
         closure :: Env
       }
+  | Macro
+      { params :: [String],
+        body :: [LispVal],
+        closure :: Env
+      }
   | IOFunc ([LispVal] -> IOThrowsError LispVal)
   | Port Handle
 
@@ -45,6 +50,10 @@ showVal (Func {params = args, varargs = vargs, body = _, closure = _}) =
            Nothing -> ""
            Just arg -> " . " ++ arg
        )
+    ++ ") ...)"
+showVal (Macro {params = args, body = _ }) =
+  "(lambda ("
+    ++ unwords (map show args)
     ++ ") ...)"
 
 unwordsList :: [LispVal] -> String

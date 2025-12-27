@@ -107,21 +107,32 @@ equal [arg1, arg2] = do
   return $ Bool (primitiveEquals || let (Bool x) = eqvEquals in x)
 equal badArgList = throwError $ NumArgs 2 badArgList
 
+num :: [a] -> Integer
+num = toInteger . length
+
 apply :: LispVal -> [LispVal] -> IOThrowsError LispVal
 apply (PrimitiveFunc func) args = liftThrows $ func args
-apply (Func specs vargs corpus env) args =
+apply (Func specs vargs corpus funcEnv) args =
   if num specs /= num args && isNothing vargs
     then throwError $ NumArgs (num specs) args
-    else liftIO (bindVars env $ zip specs args) >>= bindVarArgs vargs >>= evalBody
+    else liftIO (bindVars funcEnv $ zip specs args) >>= bindVarArgs vargs >>= evalBody
   where
     remainingArgs = drop (length specs) args
-    num = toInteger . length
-    evalBody domain = last <$> mapM (eval domain) corpus 
+    evalBody domain = last <$> mapM (eval domain) corpus
     bindVarArgs arg domain = case arg of
       Just argName -> liftIO $ bindVars domain [(argName, List remainingArgs)]
-      Nothing -> return domain 
+      Nothing -> return domain
 apply (IOFunc func) args = func args
 apply _ _ = throwError $ Default "No function passed"
+
+applyMacro :: Env -> LispVal -> [LispVal] -> IOThrowsError LispVal
+applyMacro globalEnv (Macro specs corpus macroEnv) args =
+  if num specs /= num args
+    then throwError $ NumArgs (num specs) args
+    else liftIO (bindVars macroEnv $ zip specs args) >>= evalBody
+  where
+    evalBody macroEnv = last <$> mapM (eval macroEnv) corpus
+applyMacro _ _ = throwError $ Default "No macro passed"
 
 applyProc :: [LispVal] -> IOThrowsError LispVal
 applyProc [func, List args] = apply func args

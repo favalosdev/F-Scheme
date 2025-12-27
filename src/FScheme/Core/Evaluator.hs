@@ -40,10 +40,15 @@ eval env (List (Atom "lambda" : vargs@(Atom _) : corpus)) =
   makeVarArgs vargs env [] corpus
 eval env (List [Atom "load", String filename]) =
   load filename >>= fmap List . mapM (eval env)
-eval env (List (function : args)) = do
-  func <- eval env function
-  argVals <- mapM (eval env) args
-  apply func argVals
+eval env (List (function : args)) =
+  do
+    func <- eval env function
+    case func of
+      Macro {} -> applyMacro func args
+      Func {} -> do
+        argVals <- mapM (eval env) args
+        apply func argVals
+      badForm -> throwError $ BadSpecialForm "Unrecognized special form" badForm
 eval _ badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
 
 evalString :: Env -> String -> IO String
