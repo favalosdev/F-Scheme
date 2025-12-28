@@ -32,6 +32,8 @@ eval env (List (Atom "define" : List (Atom var : specs) : corpus)) =
   makeNormalFunc env specs corpus >>= defineVar env var
 eval env (List (Atom "define" : DottedList (Atom var : specs) vargs : corpus)) =
   makeVarArgs vargs env specs corpus >>= defineVar env var
+eval env (List (Atom "defmacro" : List (Atom macro : specs) : corpus )) =
+  makeMacro env specs corpus >>= defineVar env macro
 eval env (List (Atom "lambda" : List specs : corpus)) =
   makeNormalFunc env specs corpus
 eval env (List (Atom "lambda" : DottedList specs vargs : corpus)) =
@@ -44,7 +46,7 @@ eval env (List (function : args)) =
   do
     func <- eval env function
     case func of
-      Macro {} -> applyMacro func args
+      Macro {} -> applyMacro env func args
       Func {} -> do
         argVals <- mapM (eval env) args
         apply func argVals

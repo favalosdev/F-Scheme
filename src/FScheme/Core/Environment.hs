@@ -58,6 +58,9 @@ makeFunc vargs env specs corpus = return $ Func (map showVal specs) vargs corpus
 makeNormalFunc :: Env -> [LispVal] -> [LispVal] -> IOThrowsError LispVal
 makeNormalFunc = makeFunc Nothing
 
+makeMacro :: Env -> [LispVal] -> [LispVal] -> IOThrowsError LispVal
+makeMacro env specs corpus = return $ Macro (map showVal specs) corpus env
+
 makeVarArgs :: LispVal -> Env -> [LispVal] -> [LispVal] -> IOThrowsError LispVal
 makeVarArgs = makeFunc . Just . showVal
 

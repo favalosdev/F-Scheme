@@ -51,8 +51,8 @@ showVal (Func {params = args, varargs = vargs, body = _, closure = _}) =
            Just arg -> " . " ++ arg
        )
     ++ ") ...)"
-showVal (Macro {params = args, body = _ }) =
-  "(lambda ("
+showVal (Macro {params = args, body = _}) =
+  "(macro ("
     ++ unwords (map show args)
     ++ ") ...)"
 

@@ -112,10 +112,10 @@ num = toInteger . length
 
 apply :: LispVal -> [LispVal] -> IOThrowsError LispVal
 apply (PrimitiveFunc func) args = liftThrows $ func args
-apply (Func specs vargs corpus funcEnv) args =
+apply (Func specs vargs corpus env) args =
   if num specs /= num args && isNothing vargs
     then throwError $ NumArgs (num specs) args
-    else liftIO (bindVars funcEnv $ zip specs args) >>= bindVarArgs vargs >>= evalBody
+    else liftIO (bindVars env $ zip specs args) >>= bindVarArgs vargs >>= evalBody
   where
     remainingArgs = drop (length specs) args
     evalBody domain = last <$> mapM (eval domain) corpus
@@ -126,18 +126,19 @@ apply (IOFunc func) args = func args
 apply _ _ = throwError $ Default "No function passed"
 
 applyMacro :: Env -> LispVal -> [LispVal] -> IOThrowsError LispVal
-applyMacro globalEnv (Macro specs corpus macroEnv) args =
+applyMacro runEnv (Macro specs corpus macroEnv) args =
   if num specs /= num args
     then throwError $ NumArgs (num specs) args
-    else liftIO (bindVars macroEnv $ zip specs args) >>= evalBody
-  where
-    evalBody macroEnv = last <$> mapM (eval macroEnv) corpus
-applyMacro _ _ = throwError $ Default "No macro passed"
+    else do
+      bindings <- liftIO (bindVars macroEnv $ zip specs args)
+      expanded <- last <$> mapM (eval bindings) corpus
+      eval runEnv expanded
+applyMacro _ _ _ = throwError $ Default "No macro passed"
 
 applyProc :: [LispVal] -> IOThrowsError LispVal
 applyProc [func, List args] = apply func args
 applyProc (func : args) = apply func args
-applyProc _ = throwError $ Default "Expected procedure" 
+applyProc _ = throwError $ Default "Expected procedure"
 
 makePort :: IOMode -> [LispVal] -> IOThrowsError LispVal
 makePort mode [String filename] = fmap Port $ liftIO $ openFile filename mode
