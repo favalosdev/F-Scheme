@@ -6,7 +6,6 @@ import Data.Maybe
 import FScheme.Core.Error
 import FScheme.Core.Types
 import FScheme.Primitive.Functions
-import Control.Monad.IO.Class (liftIO)
 import Util.Flow
 
 type Env = IORef [(String, IORef LispVal)]
