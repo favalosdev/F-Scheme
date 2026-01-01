@@ -42,12 +42,12 @@ eval env (List [Atom "load", String filename]) =
   load filename >>= fmap List . mapM (eval env)
 eval env (List (function : args)) =
   do
-    func <- eval env function
-    case func of
-      Macro {} -> applyMacro func args
+    callable <- eval env function
+    case callable of
+      Macro {} -> applyMacro callable args
       _ -> do
         argVals <- mapM (eval env) args
-        apply func argVals
+        apply callable argVals
 eval _ badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
 
 evalString :: Env -> String -> IO String
