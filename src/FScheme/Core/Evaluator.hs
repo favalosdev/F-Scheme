@@ -44,7 +44,7 @@ eval env (List (function : args)) =
   do
     func <- eval env function
     case func of
-      Macro {} -> applyMacro func args
+      Macro {} -> applyMacro env func args
       Func {} -> do
         argVals <- mapM (eval env) args
         apply func argVals

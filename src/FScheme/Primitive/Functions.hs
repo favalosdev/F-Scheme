@@ -132,7 +132,7 @@ applyMacro globalEnv (Macro specs corpus macroEnv) args =
     else liftIO (bindVars macroEnv $ zip specs args) >>= evalBody
   where
     evalBody macroEnv = last <$> mapM (eval macroEnv) corpus
-applyMacro _ _ = throwError $ Default "No macro passed"
+applyMacro _ _ _ = throwError $ Default "No macro passed"
 
 applyProc :: [LispVal] -> IOThrowsError LispVal
 applyProc [func, List args] = apply func args
