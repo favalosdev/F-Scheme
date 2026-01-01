@@ -38,6 +38,17 @@ strBoolBinop = boolBinop unpackStr
 boolBoolBinop :: (Bool -> Bool -> Bool) -> [LispVal] -> ThrowsError LispVal
 boolBoolBinop = boolBinop unpackBool
 
+boolUnop :: (LispVal -> ThrowsError a) -> (a -> Bool) -> [LispVal] -> ThrowsError LispVal
+boolUnop unpacker op args =
+  if length args /= 1
+    then throwError $ NumArgs 1 args
+    else do
+      first <- unpacker $ head args
+      return $ Bool $ op first
+  
+boolBoolUnop :: (Bool -> Bool) -> [LispVal] -> ThrowsError LispVal
+boolBoolUnop = boolUnop unpackBool
+
 isType :: Unpacker -> [LispVal] -> ThrowsError LispVal
 isType (AnyUnpacker unpacker) args =
   if length args /= 1
@@ -81,7 +92,7 @@ cons [x, DottedList xs xlast] = return $ DottedList (x : xs) xlast
 cons [x1, x2] = return $ DottedList [x1] x2
 cons badArgList = throwError $ NumArgs 2 badArgList
 
-eqv :: [LispVal] -> ThrowsError LispVal
+eqv :: [LispVal] -> ThrowsError LispVal 
 eqv [Bool arg1, Bool arg2] = return $ Bool $ arg1 == arg2
 eqv [Number arg1, Number arg2] = return $ Bool $ arg1 == arg2
 eqv [String arg1, String arg2] = return $ Bool $ arg1 == arg2
@@ -181,7 +192,7 @@ primitives =
     ("<=", numBoolBinop (<=)),
     ("and", boolBoolBinop (&&)),
     ("or", boolBoolBinop (||)),
-    ("not", boolBoolUnop)
+    ("not", boolBoolUnop not),
     ("string=?", strBoolBinop (==)),
     ("string<?", strBoolBinop (<)),
     ("string>?", strBoolBinop (>)),
