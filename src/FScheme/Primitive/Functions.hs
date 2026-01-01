@@ -125,14 +125,14 @@ apply (Func specs vargs corpus funcEnv) args =
 apply (IOFunc func) args = func args
 apply _ _ = throwError $ Default "No function passed"
 
-applyMacro :: Env -> LispVal -> [LispVal] -> IOThrowsError LispVal
-applyMacro globalEnv (Macro specs corpus macroEnv) args =
+applyMacro :: LispVal -> [LispVal] -> IOThrowsError LispVal
+applyMacro (Macro specs corpus env) args =
   if num specs /= num args
     then throwError $ NumArgs (num specs) args
-    else liftIO (bindVars macroEnv $ zip specs args) >>= evalBody
+    else liftIO (bindVars env $ zip specs args) >>= evalBody
   where
-    evalBody macroEnv = last <$> mapM (eval macroEnv) corpus
-applyMacro _ _ _ = throwError $ Default "No macro passed"
+    evalBody e = last <$> mapM (eval e) corpus
+applyMacro _ _ = throwError $ Default "No macro passed"
 
 applyProc :: [LispVal] -> IOThrowsError LispVal
 applyProc [func, List args] = apply func args
@@ -181,6 +181,7 @@ primitives =
     ("<=", numBoolBinop (<=)),
     ("and", boolBoolBinop (&&)),
     ("or", boolBoolBinop (||)),
+    ("not", boolBoolUnop)
     ("string=?", strBoolBinop (==)),
     ("string<?", strBoolBinop (<)),
     ("string>?", strBoolBinop (>)),

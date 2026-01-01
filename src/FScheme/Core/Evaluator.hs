@@ -44,11 +44,10 @@ eval env (List (function : args)) =
   do
     func <- eval env function
     case func of
-      Macro {} -> applyMacro env func args
-      Func {} -> do
+      Macro {} -> applyMacro func args
+      _ -> do
         argVals <- mapM (eval env) args
         apply func argVals
-      badForm -> throwError $ BadSpecialForm "Unrecognized special form" badForm
 eval _ badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
 
 evalString :: Env -> String -> IO String
