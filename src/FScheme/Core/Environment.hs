@@ -61,6 +61,9 @@ makeNormalFunc = makeFunc Nothing
 makeVarArgs :: LispVal -> Env -> [LispVal] -> [LispVal] -> IOThrowsError LispVal
 makeVarArgs = makeFunc . Just . showVal
 
+makeMacro :: Env -> [LispVal] -> [LispVal] -> IOThrowsError LispVal
+makeMacro env specs corpus = return $ Macro (map showVal specs) corpus env
+
 primitiveBindings :: IO Env
 primitiveBindings =
   nullEnv
