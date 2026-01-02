@@ -94,7 +94,7 @@ parseBackquoted :: Parser LispVal
 parseBackquoted =
   do
     _ <- string "`("
-    xs <- parseList (parseUnquoted <|> parseExpr)
+    xs <- parseList parseExpr
     _ <- char ')'
     return $ List [Atom "backquote", xs]
 
@@ -116,6 +116,7 @@ parseExpr =
     <|> parseString
     <|> parseQuoted
     <|> parseBackquoted
+    <|> parseUnquoted
     <|> do
       _ <- char '('
       xs <- try (parseList parseExpr) <|> parseDottedList parseExpr

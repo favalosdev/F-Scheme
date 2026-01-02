@@ -15,6 +15,7 @@ eval _ val@(Bool _) = return val
 eval _ val@(Character _) = return val
 eval env (Atom name) = getVar env name
 eval _ (List [Atom "quote", val]) = return val
+eval env (List [Atom "unquote", val]) = eval env val
 eval env (List [Atom "backquote", List vals]) = List <$> mapM (evalBackquote env) vals
   where
     evalBackquote domain (List [Atom "unquote", val]) = eval domain val
