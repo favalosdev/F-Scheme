@@ -24,8 +24,7 @@ data LispVal
       }
   | Macro
       { params :: [String],
-        body :: [LispVal],
-        closure :: Env
+        body :: [LispVal]
       }
   | IOFunc ([LispVal] -> IOThrowsError LispVal)
   | Port Handle

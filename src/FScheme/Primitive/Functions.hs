@@ -8,6 +8,7 @@ import Control.Monad.Except
 import Data.Maybe
 import {-# SOURCE #-} FScheme.Core.Environment
 import {-# SOURCE #-} FScheme.Core.Evaluator
+import {-# SOURCE #-} FScheme.Core.Expander
 import FScheme.Core.Error
 import FScheme.Core.Types
 import FScheme.Parser.Parser
@@ -137,12 +138,15 @@ apply (IOFunc func) args = func args
 apply _ _ = throwError $ Default "No function passed"
 
 expandMacro :: LispVal -> [LispVal] -> IOThrowsError LispVal
-expandMacro (Macro specs corpus macroEnv) args =
+expandMacro (Macro specs corpus) args =
   if num specs /= num args
     then throwError $ NumArgs (num specs) args
-    else liftIO (bindVars macroEnv $ zip specs args) >>= evalBody
+    else
+      do
+        dummy <- liftIO nullEnv
+        liftIO (bindVars dummy $ zip specs args) >>= expandBody
   where
-    evalBody e = last <$> mapM (eval e) corpus
+    expandBody e = last <$> mapM (expand e) corpus
 expandMacro  _ _ = throwError $ Default "No macro passed"
 
 applyProc :: [LispVal] -> IOThrowsError LispVal
