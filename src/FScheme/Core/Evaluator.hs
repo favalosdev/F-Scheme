@@ -46,7 +46,9 @@ eval env (List (function : args)) =
   do
     callable <- eval env function
     case callable of
-      Macro {} -> applyMacro callable args
+      Macro {} -> do
+        expanded <- expandMacro callable args
+        eval env expanded
       _ -> do
         argVals <- mapM (eval env) args
         apply callable argVals
