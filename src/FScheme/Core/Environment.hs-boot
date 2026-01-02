@@ -5,3 +5,4 @@ import {-# SOURCE #-} FScheme.Core.Types
 type Env = IORef [(String, IORef LispVal)]
 
 bindVars :: Env -> [(String, LispVal)] -> IO Env
+nullEnv :: IO Env

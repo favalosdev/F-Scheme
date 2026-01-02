@@ -1,3 +1,4 @@
-(+ 2 3)
-(+ 4 5)
-(* 7 8)
+(defmacro (unless test conseq alt)
+  `(if (not ,test) ,conseq ,alt))
+
+(unless (> 3 4) 'yes 'no)

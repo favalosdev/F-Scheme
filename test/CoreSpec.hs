@@ -80,3 +80,13 @@ spec = describe "core Tests" $ do
     env <- primitiveBindings
     result <- evalString env "(>= 7 6)"
     result `shouldBe` "#t"
+
+  it "`(1 2 ,(+ 3 4))" $ do
+    env <- primitiveBindings
+    result <- evalString env "`(1 2 ,(+ 3 4))"
+    result `shouldBe` "(1 2 7)"
+
+  it "'(1 2 3 4)" $ do
+    env <- primitiveBindings
+    result <- evalString env "'(1 2 3 4)"
+    result `shouldBe` "(1 2 3 4)"
