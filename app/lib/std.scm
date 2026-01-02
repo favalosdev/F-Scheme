@@ -1,4 +1,4 @@
-(defmacro (dumb-if test conseq alt)
+(defmacro (unless test conseq alt)
   `(if ,test ,conseq ,alt))
 
-(dumb-if (> 3 4) 'yes 'no)
+(unless (> 3 4) (+ 2 3) (+ 2 4))

@@ -47,12 +47,8 @@ eval env (List (function : args)) =
   do
     callable <- eval env function
     case callable of
-      Macro {} -> do
-        expanded <- expandMacro callable args
-        eval env expanded
-      _ -> do
-        argVals <- mapM (eval env) args
-        apply callable argVals
+      Macro {} -> expandMacro callable args >>= eval env
+      _ -> mapM (eval env) args >>= apply callable
 eval _ badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
 
 evalString :: Env -> String -> IO String
