@@ -27,6 +27,13 @@ eval env (List [Atom "if", prop, conseq, alt]) =
       Bool True -> eval env conseq
       Bool False -> eval env alt
       badForm -> throwError $ BadSpecialForm "Unrecognized special form" badForm
+eval env (List [Atom "if", prop, conseq]) =
+  do
+    result <- eval env prop
+    case result of
+      Bool True -> eval env conseq
+      Bool False -> return Empty
+      badForm -> throwError $ BadSpecialForm "unrecognized special form" badForm
 eval env (List [Atom "set!", Atom var, form]) =
   eval env form >>= setVar env var
 eval env (List (Atom "define" : List (Atom var : specs) : corpus)) =

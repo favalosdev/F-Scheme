@@ -28,6 +28,7 @@ data LispVal
       }
   | IOFunc ([LispVal] -> IOThrowsError LispVal)
   | Port Handle
+  | Empty -- For some particular reasons
 
 showVal :: LispVal -> String
 showVal (String contents) = "\"" ++ contents ++ "\""
@@ -54,6 +55,7 @@ showVal (Macro {params = args, body = _ }) =
   "(lambda ("
     ++ unwords (map show args)
     ++ ") ...)"
+showVal Empty = ""
 
 unwordsList :: [LispVal] -> String
 unwordsList = unwords . map showVal
