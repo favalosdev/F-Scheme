@@ -33,6 +33,7 @@ library
         FScheme.Core.Error
         FScheme.Core.Environment
         FScheme.Core.Evaluator
+        FScheme.Core.Expander
         FScheme.Parser.Parser
         FScheme.Primitive.Functions
         FScheme.REPL.Console
